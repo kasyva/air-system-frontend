@@ -15,6 +15,8 @@
           <el-menu-item index="1" @click="setRole('ac-manager')">空调管理员</el-menu-item>
           <el-menu-item index="2" @click="setRole('front-desk')">前台管理员</el-menu-item>
           <el-menu-item index="3" @click="setRole('manager')">酒店经理</el-menu-item>
+          <el-menu-item index="4" @click="setRole('Client')">客户面板</el-menu-item>
+          <el-menu-item index="5" @click="setRole('front-desk-leave')">前台退房</el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -29,6 +31,12 @@
         <div v-if="role === 'manager'">
           <ManagerReport />
         </div>
+        <div v-if="role === 'Client'">
+          <ClientView />
+        </div>
+        <div v-if="role === 'front-desk-leave'">
+          <FrontDesk_1 />
+        </div>
       </el-main>
     </el-container>
   </div>
@@ -39,6 +47,8 @@ import { ElContainer, ElHeader, ElAside, ElMain, ElMenu, ElMenuItem } from 'elem
 import AirAdmin from './components/AirAdmin.vue'
 import FrontDesk from './components/FrontDesk.vue'
 import ManagerReport from './components/ManagerReport.vue'
+import ClientView from './components/ClientView.vue'
+import FrontDesk_1 from './components/FrontDesk_1.vue'
 
 export default {
   components: {
@@ -50,7 +60,9 @@ export default {
     ElMenuItem,
     AirAdmin,
     FrontDesk,
-    ManagerReport
+    ManagerReport,
+    ClientView,
+    FrontDesk_1
   },
   data() {
     return {
