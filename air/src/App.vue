@@ -2,46 +2,78 @@
   <div id="app">
     <!-- 头部区域 -->
     <header>
-      <h1>Hotel Management System</h1>
-      <!-- 导航链接 -->
-      <nav>
-        <router-link to="/">Home</router-link> |
-        <router-link to="/front-desk">Front Desk</router-link> |
-        <router-link to="/manager-report">Manager Report</router-link>
-      </nav>
+      <el-header style="background-color: #409EFF; color: white; text-align: center; line-height: 60px;">
+        Hotel Management System
+      </el-header>
     </header>
 
-    <!-- 路由视图区域 -->
-    <main>
-      <router-view></router-view> <!-- 动态加载路由组件 -->
-    </main>
+    <!-- 布局区域 -->
+    <el-container>
+      <!-- Aside (Sidebar) -->
+      <el-aside width="200px" style="background-color: #f4f4f4;">
+        <el-menu default-active="1" class="el-menu-vertical-demo">
+          <el-menu-item index="1" @click="setRole('ac-manager')">空调管理员</el-menu-item>
+          <el-menu-item index="2" @click="setRole('front-desk')">前台管理员</el-menu-item>
+          <el-menu-item index="3" @click="setRole('manager')">酒店经理</el-menu-item>
+        </el-menu>
+      </el-aside>
+
+      <!-- Main Content -->
+      <el-main>
+        <div v-if="role === 'ac-manager'">
+          <AirAdmin :roomId="101" />
+        </div>
+        <div v-if="role === 'front-desk'">
+          <FrontDesk />
+        </div>
+        <div v-if="role === 'manager'">
+          <ManagerReport />
+        </div>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
 <script>
+import { ElContainer, ElHeader, ElAside, ElMain, ElMenu, ElMenuItem } from 'element-plus'
+import AirAdmin from './components/AirAdmin.vue'
+import FrontDesk from './components/FrontDesk.vue'
+import ManagerReport from './components/ManagerReport.vue'
+
 export default {
-  name: 'App'
+  components: {
+    ElContainer,
+    ElHeader,
+    ElAside,
+    ElMain,
+    ElMenu,
+    ElMenuItem,
+    AirAdmin,
+    FrontDesk,
+    ManagerReport
+  },
+  data() {
+    return {
+      role: 'ac-manager'  // 默认显示空调管理员
+    }
+  },
+  methods: {
+    setRole(role) {
+      this.role = role;
+    }
+  }
 }
 </script>
 
 <style scoped>
-/* 全局样式，调整布局 */
-#app {
-  font-family: 'Arial', sans-serif;
-  text-align: center;
+.el-header {
+  background-color: #409EFF;
+  color: white;
 }
-
-header {
-  background-color: #f8f8f8;
-  padding: 10px 0;
-  margin-bottom: 20px;
+.el-aside {
+  background-color: #f4f4f4;
 }
-
-nav {
-  margin: 20px 0;
-}
-
-main {
+.el-main {
   padding: 20px;
 }
 </style>
