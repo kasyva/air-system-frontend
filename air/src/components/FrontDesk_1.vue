@@ -20,32 +20,13 @@
           </template>
           <!-- 这里可以添加顾客入住信息的具体内容 -->
           <el-row :gutter="20">
-        <el-col :span="12">
-          <el-card class="item">
-            <span>房型</span>
-            <span>单人房</span>
-          </el-card>
-        </el-col>
-        <el-col :span="12">
-          <el-card class="item">
-            <span>房号</span>
-            <span>301</span>
-          </el-card>
-        </el-col>
-        <el-col :span="12">
-          <el-card class="item">
-            <span>入住日期</span>
-            <span>24.04.18</span>
-          </el-card>
-        </el-col>
-        <el-col :span="12">
-          <el-card class="item">
-            <span>已住天数</span>
-            <span>3</span>
-          </el-card>
-        </el-col>
-      </el-row>
-
+            <el-col :span="24" v-for="(info, index) in checkInInfo" :key="index" style="margin-bottom: 10px;">
+              <el-card class="item">
+                <span>{{ info.label }}：</span>
+                <span>{{ info.value }}</span>
+              </el-card>
+            </el-col>
+          </el-row>
         </el-card>
       </el-col>
       <el-col :span="12">
@@ -55,25 +36,13 @@
           </template>
           <!-- 这里可以添加账单/详单的具体内容 -->
           <el-row :gutter="20">
-        <el-col :span="12">
-          <el-card class="item">
-            <span>房费总额</span>
-            <span>660.00元</span>
-          </el-card>
-        </el-col>
-        <el-col :span="12">
-          <el-card class="item">
-            <span>空调费</span>
-            <span>21.30元</span>
-          </el-card>
-        </el-col>
-        <el-col :span="24">
-          <el-card class="item">
-            <span>总计</span>
-            <span>681.30元</span>
-          </el-card>
-        </el-col>
-      </el-row>
+            <el-col :span="24" v-for="(bill, index) in billInfo" :key="index" style="margin-bottom: 10px;">
+              <el-card class="item">
+                <span>{{ bill.label }}：</span>
+                <span>{{ bill.value }}</span>
+              </el-card>
+            </el-col>
+          </el-row>
           <el-button type="primary" style="margin-top: 20px;" @click="switchToDetails">切换到详单</el-button>
         </el-card>
       </el-col>
@@ -90,6 +59,21 @@
 
 <script>
 export default {
+  data() {
+    return {
+      checkInInfo: [
+        { label: '房型', value: '单人房' },
+        { label: '房号', value: '301' },
+        { label: '入住日期', value: '24.04.18' },
+        { label: '已住天数', value: '3' }
+      ],
+      billInfo: [
+        { label: '房费总额', value: '660.00元' },
+        { label: '空调费', value: '21.30元' },
+        { label: '总计', value: '681.30元' }
+      ]
+    };
+  },
   methods: {
     selectRoom() {
       // 处理选择房间号的逻辑
@@ -121,6 +105,6 @@ export default {
 }
 
 .box-card {
-  height: 300px;
+  height: auto; /* 调整为auto以适应动态内容的高度 */
 }
 </style>
