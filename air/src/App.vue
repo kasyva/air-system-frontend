@@ -13,11 +13,10 @@
       <el-aside width="200px" style="background-color: #f4f4f4;">
         <el-menu default-active="1" class="el-menu-vertical-demo">
           <el-menu-item index="1" @click="setRole('ac-manager')">空调管理员</el-menu-item>
-          <el-menu-item index="2" @click="setRole('front-desk')">前台管理员</el-menu-item>
+          <el-menu-item index="2" @click="setRole('front-desk')">前台</el-menu-item>
           <el-menu-item index="3" @click="setRole('manager')">酒店经理</el-menu-item>
           <el-menu-item index="4" @click="setRole('Client')">客户面板</el-menu-item>
-          <el-menu-item index="5" @click="setRole('front-desk-leave')">前台退房</el-menu-item>
-        </el-menu>
+          </el-menu>
       </el-aside>
 
       <!-- Main Content -->
@@ -44,11 +43,11 @@
 
 <script>
 import { ElContainer, ElHeader, ElAside, ElMain, ElMenu, ElMenuItem } from 'element-plus'
-import AirAdmin from './components/AirAdmin.vue'
-import FrontDesk from './components/FrontDesk.vue'
-import ManagerReport from './components/ManagerReport.vue'
+import AirAdmin from './views/AirAdmin.vue'
+import FrontDesk from '@/views/FrontDeskCheckin.vue'
+import ManagerReport from '@/views/ManagerReport.vue'
 import ClientView from './components/ClientView.vue'
-import FrontDesk_1 from './components/FrontDesk_1.vue'
+import FrontDesk_1 from '@/views/FrontDeskCheckout.vue'
 
 export default {
   components: {

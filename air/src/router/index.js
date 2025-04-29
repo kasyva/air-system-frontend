@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router' // 使用 Vue 3 的写法
-import AirAdmin from '@/components/AirAdmin.vue'
-import FrontDesk from '@/components/FrontDesk.vue'
-import ManagerReport from '@/components/ManagerReport.vue'
+import AirAdmin from '@/views/AirAdmin.vue'
+import FrontDesk from '@/views/FrontDeskCheckin.vue'
+import ManagerReport from '@/views/ManagerReport.vue'
 
 const router = createRouter({
   history: createWebHistory(), // 使用新的 history 模式

@@ -1,6 +1,6 @@
 import {render, fireEvent, waitFor} from '@testing-library/vue';
 import {ElButton, ElInput, ElForm, ElFormItem, ElCol, ElDatePicker, ElTimePicker, ElDialog} from 'element-plus';
-import FrontDesk from '@/components/FrontDesk.vue';
+import FrontDesk from '@/views/FrontDeskCheckin.vue';
 import {vi} from 'vitest';
 import axios from 'axios';
 
