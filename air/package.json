@@ -50,5 +50,16 @@
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ]
+  ],
+  "jest": {
+    "testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.vue$": "vue-jest"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "vue",
+      "json"
+    ]
+  }
 }

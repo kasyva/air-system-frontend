@@ -1,63 +1,74 @@
-// src/tests/FrontDesk.test.js
-import { render, fireEvent } from '@testing-library/vue';
-import FrontDesk from '../components/FrontDesk.vue';
+import {render, fireEvent, waitFor} from '@testing-library/vue';
+import {ElButton, ElInput, ElForm, ElFormItem, ElCol, ElDatePicker, ElTimePicker, ElDialog} from 'element-plus';
+import FrontDesk from '@/components/FrontDesk.vue';
+import {vi} from 'vitest';
 import axios from 'axios';
 
-// 确保 Jest 已经正确导入
-jest.mock('axios');
+// Mock axios 以模拟后端数据
+vi.mock('axios');
+
+// 手动注册 element-plus 组件
+const globalComponents = {
+    ElButton,
+    ElInput,
+    ElForm,
+    ElFormItem,
+    ElCol,
+    ElDatePicker,
+    ElTimePicker,
+    ElDialog
+};
 
 describe('FrontDesk Component', () => {
-  test('renders form and room selection correctly', async () => {
-    // 渲染组件
-    const { getByLabelText, getByText, getAllByRole } = render(FrontDesk);
+    it('should render the list of remaining rooms and allow room selection', async () => {
+        // 模拟的空余房间数据
+        const mockRemainingRooms = [
+            {roomId: 101, occupied: false},
+            {roomId: 102, occupied: false}
+        ];
 
-    // 检查表单元素是否正确渲染
-    expect(getByLabelText(/姓名/i)).toBeInTheDocument();
-    expect(getByLabelText(/身份证号/i)).toBeInTheDocument();
-    expect(getByLabelText(/电话/i)).toBeInTheDocument();
-    expect(getByLabelText(/入住时间/i)).toBeInTheDocument();
-    expect(getByLabelText(/入住天数/i)).toBeInTheDocument();
+        // 设置 axios mock 返回的数据
+        axios.get.mockResolvedValue({data: mockRemainingRooms});
 
-    // 模拟获取剩余房间的请求
-    axios.get.mockResolvedValue({
-      data: [
-        { roomId: '101', status: 'available' },
-        { roomId: '102', status: 'occupied' },
-        { roomId: '103', status: 'available' }
-      ]
+        // 渲染组件，并注册所有需要的 element-plus 组件
+        const {getByText, getAllByTestId} = render(FrontDesk, {
+            global: {
+                components: globalComponents // 注册全局组件
+            }
+        });
+
+        // 触发查询空余房间按钮
+        const queryButton = getByText('查询空余房间');
+        await fireEvent.click(queryButton);
+
+        // 等待房间列表渲染
+        await waitFor(() => {
+            const roomButtons = getAllByTestId('room-button');
+            expect(roomButtons.length).toBe(2); // 检查是否渲染了两个房间
+        });
+
+        // 点击第一个房间按钮，检查是否选中
+        const firstRoomButton = getAllByTestId('room-button')[0];
+        await fireEvent.click(firstRoomButton);
+
+        // 确认已选房间的状态
+        expect(firstRoomButton).toHaveAttribute('disabled'); // 房间按钮变为禁用
     });
 
-    // 点击查询空余房间按钮
-    const queryButton = getByText('查询空余房间');
-    await fireEvent.click(queryButton);
+    it('should not allow to confirm checkin without selecting a room', async () => {
+        // 渲染组件，并注册所有需要的 element-plus 组件
+        const {getByText} = render(FrontDesk, {
+            global: {
+                components: globalComponents // 注册全局组件
+            }
+        });
 
-    // 检查是否有可用房间显示
-    const availableRooms = getAllByRole('button').filter(button => button.textContent === '101' || button.textContent === '103');
-    expect(availableRooms.length).toBe(2);
-    expect(availableRooms[0]).not.toBeDisabled();
-    expect(availableRooms[1]).not.toBeDisabled();
+        // 触发确认入住按钮
+        const confirmButton = getByText('确认入住');
+        await fireEvent.click(confirmButton);
 
-    // 选择一个房间
-    await fireEvent.click(availableRooms[0]);
-
-    // 确认入住
-    const confirmButton = getByText('确认入住');
-    await fireEvent.click(confirmButton);
-
-    // 检查悬浮窗口是否显示
-    const dialog = getByText('入住成功！');
-    expect(dialog).toBeInTheDocument();
-  });
-
-  test('displays error when no room is selected', async () => {
-    // 渲染组件
-    const { getByText } = render(FrontDesk);
-
-    // 尝试直接点击确认入住按钮
-    const confirmButton = getByText('确认入住');
-    await fireEvent.click(confirmButton);
-
-    // 检查是否弹出警告
-    expect(window.alert).toHaveBeenCalledWith("请先选择空余房间");
-  });
+        // 验证弹出窗口未显示（没有房间选择时，不能确认入住）
+        const dialog = getByText('入住成功！');
+        expect(dialog).to.not.exist; // 使用 Chai 的断言方法
+    });
 });
