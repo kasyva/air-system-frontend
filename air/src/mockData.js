@@ -1,4 +1,4 @@
-// mockData.js。用于frontdeskcheckin数据模拟
+// mockData.js。用于frontdeskcheckin和login数据模拟
 import axios from 'axios';
 import dayjs from 'dayjs'; // 用来生成入住、退房时间
 
@@ -58,3 +58,15 @@ axios.get = getRemainingRooms;
 axios.post = checkin;
 
 export { getRemainingRooms, checkin };
+
+const validCredentials = {
+  '101': '12345678',
+  '102': '87654321',
+  '201': '11223344',
+  '202': '44332211'
+  // 可根据需要添加更多房间号和密码
+}
+
+export function validateRoomCredentials(roomNumber, cardPassword) {
+  return validCredentials[roomNumber] === cardPassword
+}

@@ -1,8 +1,8 @@
 <template>
   <el-card
-      :body-style="{ padding: '0',  height: '100px',  }"
-      :shadow="'hover'"
       class="room-card"
+      shadow="always"
+
       :class="{ selected: selected }"
       @click="handleClick"
   >
@@ -98,17 +98,16 @@ export default {
 <style scoped>
 .room-card {
   border-radius: 2px;
-  --el-box-shadow: var(--el-box-shadow-light);
-  box-shadow: var(--el-box-shadow);
   cursor: pointer;
-  transition: 0.3s;
-  width: 200px; /* 统一卡片宽度 */
-  height: 100px; /* 统一卡片高度 */
-  margin: 0 auto; /* 水平居中 */
+  width: 200px;
+  height: 100px;
+  margin: 0 auto;
+  --el-box-shadow: var(--el-box-shadow-dark);
 }
 
-.room-card.selected {
-  box-shadow: 0 0 10px 3px #409eff; /* 选中时蓝色光圈 */
+.room-card >>> .el-card__body {
+  padding: 0 !important;
+  height: 100%;
 }
 
 .overlay {
