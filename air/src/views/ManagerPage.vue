@@ -1,44 +1,51 @@
 <template>
-  <div class="manager-panel">
-    <!-- 左侧：折线图卡片 -->
-    <el-card class="chart-panel" shadow="always">
-      <div class="filter-row">
-        <el-select v-model="lineTime" placeholder="时间范围" @change="fetchLineChartData" style="width: 200px">
-          <el-option label="今日数据" value="day"/>
-          <el-option label="过去一周" value="week"/>
-        </el-select>
-        <el-select v-model="lineRoom" placeholder="房间选择" clearable @change="fetchLineChartData" style="width: 200px">
-          <el-option label="所有房间" value="all"/>
-          <el-option v-for="room in rooms" :key="room" :label="room" :value="room"/>
-        </el-select>
-      </div>
-      <ECharts :option="lineChartOption" style="height: 300px"/>
-    </el-card>
+  <BaseLayout :sidebarComponent="sidebarComp">
+    <div class="manager-panel">
+      <!-- 左侧：折线图卡片 -->
+      <el-card class="chart-panel" shadow="always">
+        <div class="filter-row">
+          <el-select v-model="lineTime" placeholder="时间范围" @change="fetchLineChartData" style="width: 200px">
+            <el-option label="今日数据" value="day"/>
+            <el-option label="过去一周" value="week"/>
+          </el-select>
+          <el-select v-model="lineRoom" placeholder="房间选择" clearable @change="fetchLineChartData"
+                     style="width: 200px">
+            <el-option label="所有房间" value="all"/>
+            <el-option v-for="room in rooms" :key="room" :label="room" :value="room"/>
+          </el-select>
+        </div>
+        <ECharts :option="lineChartOption" style="height: 300px"/>
+      </el-card>
 
-    <!-- 右侧：饼图卡片 -->
-    <el-card class="chart-panel" shadow="always">
-      <div class="filter-row">
-        <el-select v-model="pieMetric" placeholder="统计内容" @change="fetchPieChartData" style="width: 200px">
-          <el-option label="风速时长占比" value="fan"/>
-          <el-option label="费用占比" value="fee"/>
-        </el-select>
-        <el-select v-model="pieRoom" placeholder="房间选择" clearable @change="fetchPieChartData" style="width: 200px">
-          <el-option label="所有房间" value="all"/>
-          <el-option v-for="room in rooms" :key="room" :label="room" :value="room"/>
-        </el-select>
-      </div>
-      <ECharts :option="pieChartOption" style="height: 300px"/>
-    </el-card>
-  </div>
+      <!-- 右侧：饼图卡片 -->
+      <el-card class="chart-panel" shadow="always">
+        <div class="filter-row">
+          <el-select v-model="pieMetric" placeholder="统计内容" @change="fetchPieChartData" style="width: 200px">
+            <el-option label="风速时长占比" value="fan"/>
+            <el-option label="费用占比" value="fee"/>
+          </el-select>
+          <el-select v-model="pieRoom" placeholder="房间选择" clearable @change="fetchPieChartData"
+                     style="width: 200px">
+            <el-option label="所有房间" value="all"/>
+            <el-option v-for="room in rooms" :key="room" :label="room" :value="room"/>
+          </el-select>
+        </div>
+        <ECharts :option="pieChartOption" style="height: 300px"/>
+      </el-card>
+    </div>
+  </BaseLayout>
 </template>
 
 <script>
 import {ref, onMounted} from 'vue'
 import ECharts from 'vue-echarts'
 import {getLineChartMockData, getPieChartMockData} from '@/mockDataManager.js'
+import BaseLayout from "@/components/Layout/BaseLayout.vue";
+import SidebarManager from "@/components/Layout/SidebarManager.vue";
 
 export default {
   components: {
+    BaseLayout,
     ECharts
   },
   setup() {
@@ -81,6 +88,11 @@ export default {
       fetchLineChartData,
       fetchPieChartData
     }
+  },
+  data() {
+    return {
+      sidebarComp: SidebarManager
+    };
   }
 }
 </script>

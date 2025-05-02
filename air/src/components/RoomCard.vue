@@ -55,11 +55,12 @@ export default {
   setup(props, {emit}) {
     const backgroundImageUrl = computed(() => {
       if (props.occupied) {
-        return '/occupied-room.jpg'
+        return require('@/assets/occupied-room.jpg')
       } else {
-        return '/available-room.jpg'
+        return require('@/assets/available-room.jpg')
       }
     })
+
 
     const statusText = computed(() => {
       return props.occupied ? '入住中' : '可入住'
@@ -99,8 +100,8 @@ export default {
 .room-card {
   border-radius: 2px;
   cursor: pointer;
-  width: 200px;
-  height: 100px;
+  width: 180px;
+  height: 85px;
   margin: 0 auto;
   --el-box-shadow: var(--el-box-shadow-dark);
 }
@@ -114,9 +115,9 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
-  background-size: cover;        /* 关键：拉伸背景图铺满整个div */
-  background-position: center;   /* 背景居中 */
-  background-repeat: no-repeat;  /* 背景不要平铺重复 */
+  background-size: cover; /* 关键：拉伸背景图铺满整个div */
+  background-position: center; /* 背景居中 */
+  background-repeat: no-repeat; /* 背景不要平铺重复 */
   border-radius: 2px;
   color: #ffffff;
   font-weight: bold;

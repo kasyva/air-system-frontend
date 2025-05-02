@@ -1,31 +1,25 @@
+<!--@/views/FrontDeskCheckinPage.vue-->
 <template>
-  <div class="outer-wrapper">
-    <el-container class="page-container">
-      <!-- Header 菜单 -->
-      <el-header class="card-header">
-        <el-card shadow="always" class="header-card">
-          <el-menu :default-active="activeTab" mode="horizontal" @select="handleTabSelect" class="menu-bar">
-            <el-menu-item index="checkin">入住</el-menu-item>
-            <el-menu-item index="checkout">退房</el-menu-item>
-          </el-menu>
-        </el-card>
-      </el-header>
-
-      <!-- Main 主体内容 -->
-      <el-main class="card-main">
-        <el-card shadow="always" class="main-card">
-          <!-- 入住界面 -->
-          <div v-if="activeTab === 'checkin'" class="room-selection">
-            <CheckinForm
+  <BaseLayout :sidebarComponent="sidebarComp" :sidebarProps="sidebarProps">
+    <div v-if="activeTab === '1'">
+      <el-card shadow="always" class="main-card">
+        <!-- 入住界面 -->
+        <template #header>
+          <div class="card-header">
+            <span>今日房态</span>
+          </div>
+        </template>
+        <div class="room-selection">
+          <CheckinForm
               v-if="showCheckinForm"
               :room-id="selectedRoom"
               @success="handleCheckinSuccess"
               @fail="handleCheckinFail"
               @close="showCheckinForm = false"
-            />
-            <div class="room-list">
-              <div class="room-row" v-for="(chunk, rowIndex) in chunkedRooms" :key="rowIndex">
-                <RoomCard
+          />
+          <div class="room-list">
+            <div class="room-row" v-for="(chunk, rowIndex) in chunkedRooms" :key="rowIndex">
+              <RoomCard
                   v-for="room in chunk"
                   :key="room.roomId"
                   :room-id="room.roomId"
@@ -34,38 +28,45 @@
                   :check-out-time="room.checkOutTime"
                   :selected="room.roomId === selectedRoom"
                   @click="selectRoom"
-                />
-              </div>
+              />
             </div>
           </div>
+        </div>
 
-          <!-- 退房界面 -->
-          <FrontDeskCheckout v-else />
-        </el-card>
-      </el-main>
-    </el-container>
 
-    <!-- 成功弹窗 -->
-    <el-dialog v-model:visible="dialogVisible" width="80%" @close="clearForm">
-      <span>入住成功！</span>
-    </el-dialog>
-  </div>
+      </el-card>
+      <!-- 成功弹窗 -->
+      <el-dialog v-model:visible="dialogVisible" width="80%" @close="clearForm">
+        <span>入住成功！</span>
+      </el-dialog>
+    </div>
+    <!-- 退房界面 -->
+    <FrontDeskCheckout v-else/>
+
+
+  </BaseLayout>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import {ref, computed, onMounted} from 'vue'
+import {ElMessage} from 'element-plus'
+
 import RoomCard from '@/components/RoomCard.vue'
 import CheckinForm from '@/components/CheckinForm.vue'
+import BaseLayout from '@/components/Layout/BaseLayout.vue'
+import SidebarFrontDesk from "@/components/Layout/SidebarFrontDesk.vue";
+
 import FrontDeskCheckout from '@/views/FrontDeskCheckoutPage.vue'
-import { getRemainingRooms, checkin } from '@/mockData.js'
-import { ElMessage } from 'element-plus'
+
+import {getRemainingRooms, checkin} from '@/mockData.js'
 
 export default {
   name: 'FrontDesk',
   components: {
     RoomCard,
     CheckinForm,
-    FrontDeskCheckout
+    FrontDeskCheckout,
+    BaseLayout
   },
   setup() {
     const form = ref({})
@@ -73,7 +74,7 @@ export default {
     const remainingRooms = ref([])
     const selectedRoom = ref(null)
     const dialogVisible = ref(false)
-    const activeTab = ref('checkin')
+    const activeTab = ref('1') // 默认选中
     const showCheckinForm = ref(false)
 
     const chunkedRooms = computed(() => {
@@ -111,10 +112,6 @@ export default {
       }
     }
 
-    const handleTabSelect = (key) => {
-      activeTab.value = key
-    }
-
     const handleCheckinSuccess = () => {
       ElMessage.success('入住成功！')
       showCheckinForm.value = false
@@ -129,6 +126,14 @@ export default {
       selectedRoom.value = null
       form.value = {}
     }
+
+    const sidebarProps = {
+  activeIndex: activeTab.value,
+  onSelect: (key) => {
+    activeTab.value = key
+  }
+}
+
 
     onMounted(() => {
       getRemainingRoomsData()
@@ -145,56 +150,43 @@ export default {
       getRemainingRoomsData,
       selectRoom,
       confirmCheckin,
-      handleTabSelect,
       handleCheckinSuccess,
       handleCheckinFail,
-      clearForm
+      clearForm,
+      sidebarComp: SidebarFrontDesk,
+      sidebarProps
     }
   }
 }
 </script>
 
 <style scoped>
-.outer-wrapper {
-  background-color: #f3f3f3;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.card-header,
-.card-main {
-  margin-bottom: 20px;
-}
-
-.header-card,
 .main-card {
-  border-radius: 6px;
+  border-radius: 5px;
   background-color: #ffffff;
   box-shadow: var(--el-box-shadow-light);
-  padding: 10px 20px;
-}
-
-.menu-bar {
-  border-bottom: none;
+  margin: 10px 15px 0 10px;
+  flex: 1;
+  height: 560px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .room-selection {
-  padding-top: 20px;
+  padding-top: 10px;
 }
 
 .room-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
+  margin-left: 20px;
+  margin-right: 20px;
 }
 
 .room-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 </style>
