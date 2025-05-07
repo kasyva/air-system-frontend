@@ -1,5 +1,5 @@
 <template>
-  <BaseLayout :sidebarComponent="SidebarLogin" :sidebarProps="sidebarProps">
+  <BaseLayout :sidebarComponent="SidebarLogin" :sidebarProps="sidebarProps" :show-logout-button="false">
     <div class="login-main">
       <!-- 用户登录区域 -->
       <div v-if="activeTab === '1'" class="login-card">

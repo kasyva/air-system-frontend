@@ -1,4 +1,5 @@
 <!--@/components/Layout/BaseLayout.vue-->
+<!-- BaseLayout.vue -->
 <template>
   <div class="common-layout">
     <el-container class="card-container">
@@ -10,7 +11,8 @@
           <span class="zhi-mang-xing-regular">波普特大学廉价快捷酒店</span>
         </div>
         <div class="header-right">
-          <el-button type="text" @click="logout">
+          <!-- 控制登出按钮是否显示 -->
+          <el-button v-if="showLogoutButton" type="text" @click="logout">
             <el-icon :size="25" color="#ed6351ff">
               <Back/>
             </el-icon>
@@ -32,13 +34,13 @@
 </template>
 
 <script>
-import {useRouter} from 'vue-router'
-import {HomeFilled, Back} from '@element-plus/icons-vue'
-import {ElMessageBox} from "element-plus";
+import { useRouter } from 'vue-router'
+import { HomeFilled, Back } from '@element-plus/icons-vue'
+import { ElMessageBox } from "element-plus";
 
 export default {
   name: 'BaseLayout',
-  components: {Back, HomeFilled},
+  components: { Back, HomeFilled },
   props: {
     sidebarComponent: {
       type: [Object, Function, String],
@@ -47,24 +49,27 @@ export default {
     sidebarProps: {
       type: Object,
       default: () => ({})
+    },
+    showLogoutButton: {
+      type: Boolean,
+      default: true // 默认显示登出按钮
     }
   },
   setup() {
     const router = useRouter()
     const logout = () => {
       ElMessageBox.confirm(
-          '确定要退出登录吗？',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
+        '确定要退出登录吗？',
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
       ).then(() => {
-        // 确认退出
         router.push('/login-page')
       }).catch(() => {
-        // 取消退出，无操作
+        // 取消无操作
       })
     }
 
