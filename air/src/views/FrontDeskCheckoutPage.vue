@@ -32,7 +32,7 @@
 import { ref, computed, onMounted } from 'vue';
 import RoomCard from '@/components/RoomCard.vue'; // 确保路径正确
 import { getRemainingRooms, checkout } from '@/mockData.js'; // 假设 mockData 中包含 checkout 接口
-import CheckoutDetail from '@/components/Layout/CheckoutDetail.vue'; // 引入 CheckoutDetail 组件
+import CheckoutDetail from '@/components/CheckoutDetail.vue'; // 引入 CheckoutDetail 组件
 import { ElMessage } from "element-plus";
 
 export default {

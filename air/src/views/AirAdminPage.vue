@@ -1,113 +1,184 @@
 <template>
   <BaseLayout :sidebarComponent="sidebarComp">
     <div class="air-condition-manager">
-      <h2>空调管理员main页面</h2>
-      <el-button type="primary" round @click="toggleAirCondition">开启中央空调</el-button>
-      <el-button type="primary" round @click="toggleAirCondition">关闭中央空调</el-button>
-      <el-table :data="tableData" style="width: 100%">
-        <el-table-column prop="roomNumber" label="房间号" width="180"></el-table-column>
-        <el-table-column prop="isVentilation" label="是否送风" width="180">
-          <template v-slot:default="{ row }">
-            <el-switch v-model="row.isVentilation"></el-switch>
-          </template>
-        </el-table-column>
-        <el-table-column prop="currentTemperature" label="当前温度"></el-table-column>
-        <el-table-column prop="targetTemperature" label="目标温度"></el-table-column>
-        <el-table-column prop="currentCost" label="当前费用"></el-table-column>
-        <el-table-column prop="totalCost" label="总费用"></el-table-column>
-        <el-table-column label="操作">
-          <template v-slot:default="{ row }">
-            <!-- 这里可以添加更多操作 -->
-            <el-button size="mini" @click="handleEdit(row)">编辑</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- 中央空调控制按钮 -->
+      <div class="central-air-controls" style="margin: 20px;">
+        <el-button type="primary" @click="turnOnAllRoomsAC">开启中央空调</el-button>
+        <el-button type="info" @click="turnOffAllRoomsAC">关闭中央空调</el-button>
+      </div>
+
+      <div class="room-list">
+        <div class="room-row" v-for="(row, rowIndex) in chunkedAllRooms" :key="rowIndex">
+          <RoomCard_1
+            v-for="room in row"
+            :key="room.roomId"
+            :roomId="room.roomId"
+            :occupied="room.occupied"
+            :checkInTime="room.checkInTime"
+            :checkOutTime="room.checkOutTime"
+            :is-air-conditioning-enabled="room.isAirConditioningOn"
+            @toggle-air-conditioning="handleUpdateACStatus"
+            @click="showDetailDialog(room)"
+          />
+        </div>
+      </div>
+
+      <!-- 房间详情界面 -->
+    <div v-if="selectedRoom" class="room-detail-container">
+      <div class="room-detail">
+        <component
+          :is="currentComponent"
+          :selected-room="selectedRoom"
+          @update:ac="handleUpdateACStatus"
+          @close="closeDetail"
+        />
+      </div>
+    </div>
     </div>
   </BaseLayout>
 </template>
 
 <script>
+import { ref, computed, onMounted } from 'vue';
+import RoomCard_1 from '@/components/RoomCard_1.vue';
+import AirAdminDetail from '@/components/AirAdminDetail.vue';
+import { getRemainingRooms } from '@/mockData.js'; // 假设这是你获取房间数据的方法
 import BaseLayout from "@/components/Layout/BaseLayout.vue";
-import SidebarAirAdmin from "@/components/Layout/SidebarAirAdmin.vue";
+import SidebarAirAdmin from '@/components/Layout/SidebarAirAdmin.vue';
 
 export default {
+  name: 'AirAdminPage',
   components: {
-    BaseLayout
+    RoomCard_1,
+    BaseLayout,
+    AirAdminDetail
   },
-  data() {
-    return {
-      sidebarComp: SidebarAirAdmin,
-      tableData: [
-        {
-          roomNumber: '101',
-          isVentilation: true,
-          currentTemperature: '25°C',
-          targetTemperature: '22°C',
-          currentCost: '2.5',
-          totalCost: '25'
-        },
-        {
-          roomNumber: '102',
-          isVentilation: false,
-          currentTemperature: '26°C',
-          targetTemperature: '23°C',
-          currentCost: '2.3',
-          totalCost: '23'
-        },
-        {
-          roomNumber: '103',
-          isVentilation: true,
-          currentTemperature: '25°C',
-          targetTemperature: '22°C',
-          currentCost: '2.5',
-          totalCost: '25'
-        },
-        {
-          roomNumber: '104',
-          isVentilation: false,
-          currentTemperature: '26°C',
-          targetTemperature: '23°C',
-          currentCost: '2.3',
-          totalCost: '23'
-        },
-        {
-          roomNumber: '105',
-          isVentilation: true,
-          currentTemperature: '25°C',
-          targetTemperature: '22°C',
-          currentCost: '2.5',
-          totalCost: '25'
-        },
-        {
-          roomNumber: '106',
-          isVentilation: false,
-          currentTemperature: '26°C',
-          targetTemperature: '23°C',
-          currentCost: '2.3',
-          totalCost: '23'
-        }
-      ]
+  setup() {
+    const remainingRooms = ref([]);
+    const roomsPerRow = 5;
+    const dialogVisible = ref(false);
+    const selectedRoom = ref(null);
+    const currentComponent = ref(AirAdminDetail);
+    // 新增方法用于关闭房间详情
+    const closeDetail = () => {
+      selectedRoom.value = null;
     };
-  },
-  methods: {
-    toggleAirCondition() {
-      // 实现开关中央空调的逻辑
-      console.log('中央空调开关被点击');
-    },
-    handleEdit(row) {
-      // 实现编辑逻辑
-      console.log(`编辑行: ${row.roomNumber}`);
-    }
+
+    const loadRoomData = async () => {
+      try {
+        const response = await getRemainingRooms();
+        remainingRooms.value = response.data.map(room => ({
+          ...room,
+          isAirConditioningOn: false // 初始化空调状态
+        }));
+      } catch (error) {
+        console.error('获取房间数据失败:', error);
+      }
+    };
+
+    onMounted(() => {
+      loadRoomData();
+    });
+
+    const allRooms = computed(() => {
+      return remainingRooms.value;
+    });
+
+    const chunkedAllRooms = computed(() => {
+      const chunks = [];
+      for (let i = 0; i < allRooms.value.length; i += roomsPerRow) {
+        chunks.push(allRooms.value.slice(i, i + roomsPerRow));
+      }
+      return chunks;
+    });
+
+    const showDetailDialog = (room) => {
+      selectedRoom.value = { ...room }; // 深拷贝当前房间对象
+      //dialogVisible.value = true;
+    };
+
+    // 处理从弹窗中更新空调状态
+    const handleUpdateACStatus = ({ roomId, newValue }) => {
+      const room = remainingRooms.value.find(r => r.roomId === roomId);
+      if (room) {
+        room.isAirConditioningOn = newValue;
+      }
+    };
+
+    // 开启中央空调
+    const turnOnAllRoomsAC = () => {
+      remainingRooms.value.forEach(room => {
+        room.isAirConditioningOn = true;
+      });
+    };
+
+    // 关闭中央空调
+    const turnOffAllRoomsAC = () => {
+      remainingRooms.value.forEach(room => {
+        room.isAirConditioningOn = false;
+      });
+    };
+
+    return {
+      chunkedAllRooms,
+      dialogVisible,
+      selectedRoom,
+      currentComponent,
+      showDetailDialog,
+      closeDetail,
+      sidebarComp: SidebarAirAdmin,
+
+      // 方法
+      handleUpdateACStatus,
+      turnOnAllRoomsAC,
+      turnOffAllRoomsAC
+    };
   }
 };
 </script>
 
 <style scoped>
-.air-condition-manager {
-  text-align: center;
+.central-air-controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center; /* 水平居中 */
 }
 
-.el-button {
-  margin-bottom: 20px;
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.room-detail-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明遮罩层 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* 确保在其他元素之上 */
+}
+
+.room-detail {
+  background-color: transparent;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  width: 60%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+
+.room-row {
+  display: flex;
+  gap: 8px;
 }
 </style>
