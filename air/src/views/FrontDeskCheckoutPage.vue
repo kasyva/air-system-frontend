@@ -22,7 +22,7 @@
     </div>
 
     <!-- 弹窗：显示 CheckoutDetail 组件 -->
-    <el-dialog v-model="dialogVisible" title="退房详情" width="60%" top="5vh">
+    <el-dialog v-model="dialogVisible" title="退房详情" width="80%" top="0vh">
       <component :is="currentComponent" :selected-room="selectedRoom" @close="dialogVisible = false" @confirmCheckout="confirmCheckout"></component>
     </el-dialog>
   </div>
@@ -31,15 +31,16 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import RoomCard from '@/components/RoomCard.vue'; // 确保路径正确
-import { getRemainingRooms, checkout } from '@/mockData.js'; // 假设 mockData 中包含 checkout 接口
+import { getRemainingRooms} from '@/mockData.js'; // 假设 mockData 中包含 checkout 接口
 import CheckoutDetail from '@/components/CheckoutDetail.vue'; // 引入 CheckoutDetail 组件
 import { ElMessage } from "element-plus";
-
+//import { mapState, mapActions, mapGetters } from 'vuex'
 export default {
   name: 'FrontDeskCheckout',
   components: {
     RoomCard,
   },
+
   setup() {
     const remainingRooms = ref([]); // 存储所有房间数据
     const roomsPerRow = 5; // 每行显示5个房间
@@ -48,14 +49,17 @@ export default {
     const currentComponent = ref(CheckoutDetail); // 动态组件引用
 
     // 加载页面时获取房间数据
+
     const loadRoomData = async () => {
       try {
         const response = await getRemainingRooms(); // 获取房间信息
+        console.log("加载的房间数据:", response.data);
         remainingRooms.value = response.data;
       } catch (error) {
         console.error('获取房间数据失败:', error);
       }
     };
+
 
     onMounted(() => {
       loadRoomData();
@@ -77,34 +81,19 @@ export default {
 
     // 显示退房弹窗并加载当前房间数据
     const showCheckoutDialog = (room) => {
+      console.log("展示退房弹窗，房间信息为：", room); // 打印 room 数据
       selectedRoom.value = { ...room }; // 深拷贝避免修改原始数据
       dialogVisible.value = true;
     };
 
-    // 确认退房逻辑
-    const confirmCheckout = async () => {
-      if (!selectedRoom.value) return;
 
-      try {
-        await checkout({ roomId: selectedRoom.value.roomId }); // 调用退房接口
+    const confirmCheckout = (roomId) => {
+      dialogVisible.value = false;
+      ElMessage.success(`房间 ${roomId} 已提交退房请求`);
+      selectedRoom.value = null; // 清空选择的房间
 
-        // 更新本地状态
-        const index = remainingRooms.value.findIndex(
-          r => r.roomId === selectedRoom.value.roomId
-        );
-        if (index !== -1) {
-          remainingRooms.value[index].occupied = false;
-          remainingRooms.value[index].checkInTime = null;
-          remainingRooms.value[index].checkOutTime = null;
-        }
-
-        dialogVisible.value = false;
-        ElMessage.success(`房间 ${selectedRoom.value.roomId} 退房成功`);
-        selectedRoom.value = null;
-      } catch (error) {
-        console.error("退房失败:", error);
-        ElMessage.error("退房失败，请重试");
-      }
+      // 移除已退房的房间
+      remainingRooms.value = remainingRooms.value.filter(room => room.roomId !== roomId);
     };
 
     return {
