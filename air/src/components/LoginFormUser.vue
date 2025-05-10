@@ -26,14 +26,16 @@
 </template>
 
 <script>
-import {ref} from 'vue'
-import {ElMessage} from 'element-plus'
-import {validateRoomCredentials} from '@/mockData.js'
+import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { validateRoomCredentials } from '@/mockData.js'
 
 export default {
   name: 'LoginForm',
   emits: ['login-success'],
-  setup(_, {emit}) {
+  setup(_, { emit }) {
+    const router = useRouter()
     const formRef = ref(null)
 
     const form = ref({
@@ -42,16 +44,16 @@ export default {
     })
 
     const roomOptions = [
-      ...Array.from({length: 10}, (_, i) => (101 + i).toString()),
-      ...Array.from({length: 10}, (_, i) => (201 + i).toString())
+      ...Array.from({ length: 10 }, (_, i) => (101 + i).toString()),
+      ...Array.from({ length: 10 }, (_, i) => (201 + i).toString())
     ]
 
     const rules = {
       roomNumber: [
-        {required: true, message: '请选择房间号', trigger: 'change'}
+        { required: true, message: '请选择房间号', trigger: 'change' }
       ],
       cardPassword: [
-        {required: true, message: '请输入房卡密码', trigger: 'blur'},
+        { required: true, message: '请输入房卡密码', trigger: 'blur' },
         {
           pattern: /^\d{8}$/,
           message: '房卡密码必须为8位数字',
@@ -66,6 +68,15 @@ export default {
           const isValid = validateRoomCredentials(form.value.roomNumber, form.value.cardPassword)
           if (isValid) {
             ElMessage.success('登录成功')
+
+            // 登录成功后跳转到 client 页面，并带上房间号作为 query 参数
+            router.push({
+              path: '/client-page',
+              query: {
+                room: form.value.roomNumber
+              }
+            })
+
             emit('login-success')
           } else {
             ElMessage.error('房间号或房卡密码错误')

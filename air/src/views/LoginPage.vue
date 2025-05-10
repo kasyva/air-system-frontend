@@ -4,7 +4,7 @@
       <!-- 用户登录区域 -->
       <div v-if="activeTab === '1'" class="login-card">
         <h2>用户登录</h2>
-        <LoginForm @login-success="handleClientLoginSuccess" />
+        <LoginForm  />
       </div>
 
       <!-- 系统登录区域 -->
@@ -18,7 +18,6 @@
 
 <script>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import BaseLayout from '@/components/Layout/BaseLayout.vue'
 import SidebarLogin from '@/components/Layout/SidebarLogin.vue'
 import LoginForm from '@/components/LoginFormUser.vue'
@@ -38,7 +37,6 @@ export default {
     LoginFormSys
   },
   setup() {
-    const router = useRouter()
     const activeTab = ref('1') // 默认用户登录
 
     const sidebarProps = {
@@ -48,14 +46,10 @@ export default {
       }
     }
 
-    const handleClientLoginSuccess = () => {
-      router.push('/client-page')
-    }
 
     return {
       activeTab,
-      sidebarProps,
-      handleClientLoginSuccess
+      sidebarProps
     }
   }
 }

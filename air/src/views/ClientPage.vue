@@ -2,7 +2,7 @@
   <BaseLayout :sidebarComponent="sidebarComp"
               :class="currentMode === 'cool' ? 'cool-theme' : 'warm-theme'">
     <div class="hotel-ac-control">
-      <h2>301 波普特廉价酒店欢迎您！</h2>
+      <h2> {{ roomNumber }} 波普特廉价酒店欢迎您！</h2>
       <el-row :gutter="20">
         <el-col :span="8">
           <el-card class="box-card">
@@ -158,8 +158,14 @@ export default {
       targetTemperature: 23.5,
       totalCost: 12.6,
       fanSpeed: 'low',
-      sidebarComp: SidebarClient  // 用 data 返回一个组件引用
+      sidebarComp: SidebarClient , // 用 data 返回一个组件引用
+      roomNumber: '' // 新增字段存储房间号
     };
+  },
+    mounted() {
+    // 从路由查询参数中获取房间号
+    this.roomNumber = this.$route.query.room || '未知房间';
+    document.title = `房间 ${this.roomNumber} - 空调控制`;
   },
   methods: {
     setFanSpeed(speed) {
