@@ -2,7 +2,7 @@
   <BaseLayout :sidebarComponent="sidebarComp"
               :class="currentMode === 'cool' ? 'cool-theme' : 'warm-theme'">
     <div class="hotel-ac-control">
-      <h2> {{ roomNumber }} 波普特廉价酒店欢迎您！</h2>
+      <h2> {{roomNumber}} 波普特廉价酒店欢迎您！</h2>
       <el-row :gutter="20">
         <el-col :span="8">
           <el-card class="box-card">
@@ -24,7 +24,7 @@
               </div>
             </template>
             <div class="text item">
-              <el-switch v-model="airConditionOn"></el-switch>
+              <el-switch v-model="airConditionOn" @change="toggleAirCondition"></el-switch>
             </div>
           </el-card>
         </el-col>
@@ -140,6 +140,14 @@ import BaseLayout from "@/components/Layout/BaseLayout.vue";
 import SidebarClient from '@/components/Layout/SidebarClient.vue'
 import { Sunny, IceCreamRound } from '@element-plus/icons-vue'
 import { Minus, Plus } from '@element-plus/icons-vue'
+
+import {
+  startAirCondition,
+  stopAirCondition,
+  getAirConditionStatus,
+  fetchBillAndDetails
+} from '@/mockData.js'
+
 export default {
   name: 'ClientView',
   components: {
@@ -149,24 +157,57 @@ export default {
     Minus,
     Plus
   },
+  computed: {
+  numericRoomNumber() {
+    return Number(this.roomNumber);
+  }
+},
   data() {
     return {
       currentTemperature: 27,
       airConditionOn: false,
       currentMode: "cool",
-      currentCost: 0.38,
+      currentCost: 0,
       targetTemperature: 23.5,
-      totalCost: 12.6,
+      totalCost: "0元",
       fanSpeed: 'low',
       sidebarComp: SidebarClient , // 用 data 返回一个组件引用
       roomNumber: '' // 新增字段存储房间号
     };
   },
-    mounted() {
-    // 从路由查询参数中获取房间号
-    this.roomNumber = this.$route.query.room || '未知房间';
-    document.title = `房间 ${this.roomNumber} - 空调控制`;
-  },
+    async mounted() {
+      this.roomNumber = this.$route.query.room || '未知房间';
+      document.title = `房间 ${this.roomNumber} - 空调控制`;
+
+      try {
+        // 获取空调状态
+        const statusRes = await getAirConditionStatus(this.roomNumber);
+        const status = statusRes.data;
+
+        this.currentTemperature = status.currentTemperature;
+        this.targetTemperature = status.targetTemperature;
+
+        if (status.windSpeed === '低风') this.fanSpeed = 'low';
+        else if (status.windSpeed === '中风') this.fanSpeed = 'medium';
+        else if (status.windSpeed === '高风') this.fanSpeed = 'high';
+
+        this.airConditionOn = true;
+
+        // 使用 fetchBillAndDetails 获取账单信息和详单总费用
+        const { billInfo, detailsTotalFee } = await fetchBillAndDetails({ roomId: this.numericRoomNumber });
+
+        console.log("生成账单:", billInfo);
+        console.log("详单总费用:", detailsTotalFee);
+
+        // 安全赋值
+        this.currentCost = parseFloat((detailsTotalFee || '0').toString().replace('元', '')); // 当前费用（空调费）
+        this.totalCost = billInfo.totalFee; // 总费用
+
+      } catch (error) {
+        console.error("获取房间信息失败", error.message);
+        this.$message.error("无法加载房间空调状态或账单信息");
+      }
+    },
   methods: {
     setFanSpeed(speed) {
       this.fanSpeed = speed;
@@ -182,6 +223,19 @@ export default {
     decreaseTemperature() {
       if (this.targetTemperature > 16) {
         this.targetTemperature -= 0.5;
+      }
+    },
+        async toggleAirCondition(value) {
+      try {
+        if (value) {
+          await startAirCondition(this.roomNumber);
+          //this.currentCost += 0.01;
+        } else {
+          await stopAirCondition(this.roomNumber);
+        }
+      } catch (error) {
+        console.error("操作失败", error.message);
+        this.airConditionOn = !value;
       }
     }
   }

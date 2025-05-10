@@ -122,11 +122,14 @@ const fetchBillAndDetails = ({ roomId }) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       console.log(`开始获取房间 ${roomId} 的账单和详单数据`);
+            console.log(`开始获取房间 ${roomId} 的账单和详单数据`);
+      console.log("传入的 roomId 类型和值:", typeof roomId, roomId);
 
       const roomIndex = remainingRoomsMockData.findIndex(room => room.roomId === roomId);
 
       if (roomIndex === -1) {
         console.error(`房间号不存在：${roomId}`);
+        console.log("剩余房间数据:", remainingRoomsMockData); // 输出所有房间数据以便检查
         reject("获取失败：房间号不存在");
         return;
       }
@@ -234,50 +237,46 @@ function generateBillInfo(roomId, checkInTime, checkOutTime, detailsTotalFee) {
   };
 }
 
+const detailsInfoMockData = {
+  103: [
+    { title: '低风', usageDuration: '2小时', usagePeriod: '08:00 - 10:00', totalCost: '6.00元' },
+    { title: '中风', usageDuration: '3小时', usagePeriod: '10:00 - 13:00', totalCost: '15.00元' },
+    { title: '高风', usageDuration: '0小时', usagePeriod: '00:00 - 00:00', totalCost: '0.00元' }
+  ],
+  107: [
+    { title: '低风', usageDuration: '1小时', usagePeriod: '09:00 - 10:00', totalCost: '3.00元' },
+    { title: '中风', usageDuration: '0小时', usagePeriod: '00:00 - 00:00', totalCost: '0.00元' },
+    { title: '高风', usageDuration: '4小时', usagePeriod: '10:00 - 14:00', totalCost: '32.00元' }
+  ],
 
+};
 
 // 🌟辅助函数：生成详单信息（低风、中风、高风），每种风速都必须有记录，未使用则费用为0
-function generateDetailsInfo() {
+function generateDetailsInfo(roomId) {
   const windRecords = ['低风', '中风', '高风'];
-  const result = {};
 
-  // 初始化每种风速为默认值
-  windRecords.forEach(wind => {
-    result[wind] = {
-      title: wind,
-      usageDuration: '0小时',
-      usagePeriod: '00:00 - 00:00',
-      totalCost: '0.00元'
-    };
-  });
+  // 默认值模板
+  const defaultRecord = {
+    usageDuration: '0小时',
+    usagePeriod: '00:00 - 00:00',
+    totalCost: '0.00元'
+  };
 
-  // 随机生成1~3条记录
-  const recordCount = 1 + Math.floor(Math.random() * 3); // 生成1到3条记录
-  const usedWinds = new Set();
-
-  for (let i = 0; i < recordCount; i++) {
-    let wind;
-    do {
-      wind = windRecords[Math.floor(Math.random() * windRecords.length)];
-    } while (usedWinds.has(wind)); // 确保不重复选择同一风速
-
-    usedWinds.add(wind);
-
-    const duration = 1 + Math.floor(Math.random() * 5); // 1~5 小时
-    const startHour = Math.floor(Math.random() * 20);
-    const endHour = startHour + duration;
-    const cost = (duration * (wind === '低风' ? 3 : wind === '中风' ? 5 : 8)).toFixed(2) + '元';
-
-    result[wind] = {
-      title: wind,
-      usageDuration: `${duration}小时`,
-      usagePeriod: `${String(startHour).padStart(2, '0')}:00 - ${String(endHour).padStart(2, '0')}:00`,
-      totalCost: cost
-    };
+  // 如果有预设数据就返回它，否则返回默认全零记录
+  if (detailsInfoMockData[roomId]) {
+    return windRecords.map(wind => {
+      const record = detailsInfoMockData[roomId].find(r => r.title === wind);
+      return record ? record : { title: wind, ...defaultRecord };
+    });
   }
 
-  // 返回按顺序排列的数组形式
-  return windRecords.map(wind => result[wind]);
+  // 否则返回默认所有风速为 0 的记录
+  return windRecords.map(wind => ({
+    title: wind,
+    usageDuration: '0小时',
+    usagePeriod: '00:00 - 00:00',
+    totalCost: '0.00元'
+  }));
 }
 
 // 🌟辅助函数：计算详单总费用
@@ -303,15 +302,42 @@ axios.post = (url, data) => {
   }
 };
 
-// 替换前端的 axios 请求
-//axios.get = getRemainingRooms;
-//axios.post = checkin;
+// 新增：用于模拟开启空调的接口
+const startAirCondition = (roomId) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (airConditionStatusMockData[roomId]) {
+        airConditionStatusMockData[roomId].isOn = true; // 假设我们使用 isOn 来表示空调是否开启
+        resolve({ success: true });
+        //console.log("open")
+      } else {
+        reject(new Error('Room not found'));
+      }
+    }, 500);
+  });
+};
 
-export { getRemainingRooms, checkin ,getAirConditionStatus, checkout,fetchBillAndDetails };
+// 新增：用于模拟关闭空调的接口
+const stopAirCondition = (roomId) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (airConditionStatusMockData[roomId]) {
+        airConditionStatusMockData[roomId].isOn = false;
+        resolve({ success: true });
+        //console.log("close")
+      } else {
+        reject(new Error('Room not found'));
+      }
+    }, 500);
+  });
+};
+
+export { getRemainingRooms, checkin ,getAirConditionStatus, checkout,fetchBillAndDetails ,startAirCondition,stopAirCondition};
 
 const validCredentials = {
   '101': '12345678',
   '102': '87654321',
+  '103': '12345678',
   '201': '11223344',
   '202': '44332211'
   // 可根据需要添加更多房间号和密码
