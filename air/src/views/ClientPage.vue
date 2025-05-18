@@ -308,7 +308,7 @@ export default {
 
 /* 制冷模式下的样式 */
 .cool-theme .box-card {
-  background: linear-gradient(135deg, #1e90ff, #87CEEB); /* 蓝色渐变 */
+  background: #0678f2;
   color: white;
   opacity:0.5
 }
@@ -320,7 +320,7 @@ export default {
 
 /* 制热模式下的样式 */
 .warm-theme .box-card {
-  background: linear-gradient(135deg, #FFA07A, #FFD580); /* 橙色渐变 */
+  background:#f29606;
   color: white;
   opacity:0.7
 }
