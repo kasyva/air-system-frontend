@@ -19,7 +19,7 @@
     </el-form-item>
     <el-form-item label-width="0" class="full-width-item">
       <div class="form-button-wrapper">
-        <el-button type="primary" @click="submitForm">确认</el-button>
+        <el-button type="primary" @click="submitForm">登录</el-button>
       </div>
     </el-form-item>
   </el-form>
