@@ -231,7 +231,7 @@ export default {
 
         this.currentTemperature = status.currentTemp || 27;
         this.targetTemperature = status.targetTemp || 23.5;
-        this.airConditionOn = status.isAcOn || false;
+        this.airConditionOn = status.acOn || false;
         this.fanSpeed = this.mapWindSpeed(status.fanSpeed) || 'low';
         // 新增字段获取
         this.serving = status.serving || false;

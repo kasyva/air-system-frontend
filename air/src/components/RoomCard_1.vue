@@ -36,7 +36,8 @@ export default {
     checkOutTime: { type: String, default: '' },
     price: { type: Number, default: 200 },
     selected: { type: Boolean, default: false },
-    monitoringData: { type: Array, default: () => [] } // 接收监控数据
+    monitoringData: { type: Array, default: () => [] }, // 接收监控数据
+    serving: { type: Boolean, default: false } // 接收送风状态
   },
   emits: ['click'],
   setup(props, { emit }) {
@@ -46,8 +47,18 @@ export default {
         : require('@/assets/available-room.jpg');
     });
 
+    // ✅ 改进状态文本逻辑
     const statusText = computed(() => {
-      return props.occupied ? '入住中' : '未入住';
+      const roomData = props.monitoringData.find(
+        room => room.roomId === props.roomId
+      );
+      const acOn = roomData?.acOn ?? false;
+
+      if (acOn) {
+        return props.serving ? '正在送风' : '请求送风';
+      } else {
+        return '暂未使用';
+      }
     });
 
     // 从监控数据中获取当前房间的空调状态
@@ -55,7 +66,7 @@ export default {
       const roomData = props.monitoringData.find(
         room => room.roomId === props.roomId
       );
-      return roomData?.acOn ?? false; // 防止找不到房间时出错
+      return roomData?.acOn ?? false;
     });
 
     const handleClick = () => {
@@ -72,9 +83,8 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
+/* 样式保持不变 */
 .room-card {
   border-radius: 2px;
   cursor: pointer;
