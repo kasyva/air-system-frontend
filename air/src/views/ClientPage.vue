@@ -57,7 +57,7 @@
               </div>
             </template>
             <div class="text item">
-              <span>{{ currentCost }}</span>
+              <span>{{ billingDetail.totalCost !== undefined ? formatCurrency(billingDetail.totalCost) : '加载中...' }}</span>
             </div>
           </el-card>
         </el-col>
@@ -69,13 +69,10 @@
               </div>
             </template>
             <div class="text item" style="display: flex; align-items: center; justify-content: space-between;">
-              <!-- 减少温度按钮 -->
               <el-button type="primary" circle @click="decreaseTemperature" :class="currentMode === 'cool' ? 'cool-btn' : 'warm-btn'">
                 <el-icon><Minus /></el-icon>
               </el-button>
-              <!-- 温度显示区域 -->
               <span style="font-size: 24px;" class="value-box">{{ targetTemperature }}℃</span>
-              <!-- 增加温度按钮 -->
               <el-button type="primary" circle @click="increaseTemperature" :class="currentMode === 'cool' ? 'cool-btn' : 'warm-btn'">
                 <el-icon><Plus /></el-icon>
               </el-button>
@@ -92,7 +89,7 @@
               </div>
             </template>
             <div class="text item">
-              <span>{{ totalCost }}</span>
+              <span>{{ billingInfo.totalCost !== undefined ? formatCurrency(billingInfo.totalCost) : formatCurrency(localBillingData.totalCost) }}</span>
             </div>
           </el-card>
         </el-col>
@@ -137,16 +134,10 @@
 
 <script>
 import BaseLayout from "@/components/Layout/BaseLayout.vue";
-import SidebarClient from '@/components/Layout/SidebarClient.vue'
-import { Sunny, IceCreamRound } from '@element-plus/icons-vue'
-import { Minus, Plus } from '@element-plus/icons-vue'
-
-import {
-  startAirCondition,
-  stopAirCondition,
-  getAirConditionStatus,
-  fetchBillAndDetails
-} from '@/mockData.js'
+import SidebarClient from '@/components/Layout/SidebarClient.vue';
+import { Sunny, IceCreamRound, Minus, Plus, Refresh } from '@element-plus/icons-vue';
+import axios from 'axios';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: 'ClientView',
@@ -155,13 +146,14 @@ export default {
     Sunny,
     IceCreamRound,
     Minus,
-    Plus
+    Plus,
+    Refresh
   },
   computed: {
-  numericRoomNumber() {
-    return Number(this.roomNumber);
-  }
-},
+    numericRoomNumber() {
+      return Number(this.roomNumber);
+    }
+  },
   data() {
     return {
       currentTemperature: 27,
@@ -171,76 +163,190 @@ export default {
       targetTemperature: 23.5,
       totalCost: "0元",
       fanSpeed: 'low',
-      sidebarComp: SidebarClient , // 用 data 返回一个组件引用
-      roomNumber: '' // 新增字段存储房间号
+      sidebarComp: SidebarClient,
+      roomNumber: '',
+      loading: true,
+      errorMsg: null,
+      billingInfo: {}, // 账单信息
+      billingDetail: {}, // 详单信息
+      loadingBilling: false, // 账单加载状态
+      loadingDetail: false, // 详单加载状态
+      // 本地模拟数据
+      localBillingData: {
+        totalCost: 128.50,
+        checkInTime: '2025-05-20 14:30',
+        checkOutTime: '未退房',
+        stayCost: 100.00,
+        acCost: 28.50
+      }
     };
   },
-    async mounted() {
-      this.roomNumber = this.$route.query.room || '未知房间';
-      document.title = `房间 ${this.roomNumber} - 空调控制`;
+  async mounted() {
+    this.roomNumber = this.$route.query.room || '未知房间';
+    document.title = `房间 ${this.roomNumber} - 空调控制`;
 
+    // 并行加载房间状态、详单和账单数据
+    await Promise.all([
+      this.loadRoomStatus(),
+      this.refreshDetail(),
+      this.refreshBilling()
+    ]);
+  },
+  methods: {
+    mapWindSpeed(speed) {
+      if (!speed) return null;
+      const mapping = {
+        "LOW": "low",
+        "MEDIUM": "medium",
+        "HIGH": "high"
+      };
+      return mapping[speed.toUpperCase()] || speed.toLowerCase();
+    },
+
+    async loadRoomStatus() {
       try {
-        // 获取空调状态
-        const statusRes = await getAirConditionStatus(this.roomNumber);
-        const status = statusRes.data;
+        this.loading = true;
+        const response = await axios.get(`/api/room/${this.roomNumber}/status`);
+        const status = response.data;
 
-        this.currentTemperature = status.currentTemperature;
-        this.targetTemperature = status.targetTemperature;
+        this.currentTemperature = status.currentTemp || 27;
+        this.targetTemperature = status.targetTemp || 23.5;
+        this.airConditionOn = status.isAcOn || false;
+        this.fanSpeed = this.mapWindSpeed(status.fanSpeed) || 'low';
 
-        if (status.windSpeed === '低风') this.fanSpeed = 'low';
-        else if (status.windSpeed === '中风') this.fanSpeed = 'medium';
-        else if (status.windSpeed === '高风') this.fanSpeed = 'high';
-
-        this.airConditionOn = true;
-
-        // 使用 fetchBillAndDetails 获取账单信息和详单总费用
-        const { billInfo, detailsTotalFee } = await fetchBillAndDetails({ roomId: this.numericRoomNumber });
-
-        console.log("生成账单:", billInfo);
-        console.log("详单总费用:", detailsTotalFee);
-
-        // 安全赋值
-        this.currentCost = parseFloat((detailsTotalFee || '0').toString().replace('元', '')); // 当前费用（空调费）
-        this.totalCost = billInfo.totalFee; // 总费用
-
+        console.log("房间状态已加载:", status);
+        ElMessage.success('房间信息加载成功');
       } catch (error) {
-        console.error("获取房间信息失败", error.message);
-        this.$message.error("无法加载房间空调状态或账单信息");
+        console.error("获取房间状态失败:", error);
+        this.errorMsg = `获取房间信息失败: ${error.message}`;
+        ElMessage.error(this.errorMsg);
+      } finally {
+        this.loading = false;
       }
     },
-  methods: {
-    setFanSpeed(speed) {
-      this.fanSpeed = speed;
+
+    // 获取详单信息（包含当前费用）
+    async refreshDetail() {
+      this.loadingDetail = true;
+
+      try {
+        const response = await axios.get(`/api/room/${this.roomNumber}/billing/detail`);
+        this.billingDetail = response.data;
+        console.log("详单信息已加载:", this.billingDetail);
+      } catch (error) {
+        console.error("获取详单失败:", error);
+        ElMessage.error('获取详单失败');
+      } finally {
+        this.loadingDetail = false;
+      }
     },
+
+    // 获取账单信息（包含总费用）
+    async refreshBilling() {
+      this.loadingBilling = true;
+
+      try {
+        const response = await axios.get(`/api/room/${this.roomNumber}/billing`);
+
+        // 检查响应状态码
+        if (response.status === 200) {
+          this.billingInfo = response.data;
+          console.log("账单信息已加载:", this.billingInfo);
+          ElMessage.success('账单信息加载成功');
+        } else {
+          throw new Error(`获取账单失败: ${response.status}`);
+        }
+      } catch (error) {
+        console.error("获取账单失败:", error);
+        ElMessage.warning('账单信息加载失败，使用本地模拟数据');
+        // 使用本地模拟数据
+        this.billingInfo = this.localBillingData;
+      } finally {
+        this.loadingBilling = false;
+      }
+    },
+
+    // 格式化货币
+    formatCurrency(value) {
+      if (value === undefined || value === null || isNaN(value)) return '0.00';
+      return parseFloat(value).toFixed(2);
+    },
+
+    // 风速设置 - 连接set-speed接口
+    async setFanSpeed(speed) {
+      try {
+        await axios.post(`/api/room/${this.roomNumber}/ac/set-speed`, null, {
+          params: { speed }
+        });
+
+        this.fanSpeed = speed;
+        ElMessage.success(`风速已设置为${speed === 'low' ? '低风' : speed === 'medium' ? '中风' : '高风'}`);
+      } catch (error) {
+        console.error("设置风速失败:", error);
+        ElMessage.error('设置风速失败');
+      }
+    },
+
     toggleMode() {
       this.currentMode = this.currentMode === 'cool' ? 'warm' : 'cool';
     },
-    increaseTemperature() {
+
+    // 温度设置 - 连接set-temp接口
+    async increaseTemperature() {
       if (this.targetTemperature < 30) {
-        this.targetTemperature += 0.5;
+        try {
+          const newTemp = this.targetTemperature + 0.5;
+          await axios.post(`/api/room/${this.roomNumber}/ac/set-temp`, null, {
+            params: { temp: newTemp }
+          });
+
+          this.targetTemperature = newTemp;
+          ElMessage.success(`目标温度已设置为${newTemp}℃`);
+        } catch (error) {
+          console.error("设置温度失败:", error);
+          ElMessage.error('设置温度失败');
+        }
       }
     },
-    decreaseTemperature() {
+
+    // 温度设置 - 连接set-temp接口
+    async decreaseTemperature() {
       if (this.targetTemperature > 16) {
-        this.targetTemperature -= 0.5;
+        try {
+          const newTemp = this.targetTemperature - 0.5;
+          await axios.post(`/api/room/${this.roomNumber}/ac/set-temp`, null, {
+            params: { temp: newTemp }
+          });
+
+          this.targetTemperature = newTemp;
+          ElMessage.success(`目标温度已设置为${newTemp}℃`);
+        } catch (error) {
+          console.error("设置温度失败:", error);
+          ElMessage.error('设置温度失败');
+        }
       }
     },
-        async toggleAirCondition(value) {
+
+    async toggleAirCondition(value) {
       try {
         if (value) {
-          await startAirCondition(this.roomNumber);
-          //this.currentCost += 0.01;
+          await axios.post(`/api/room/${this.roomNumber}/ac/start`);
+          ElMessage.success('空调已开启');
         } else {
-          await stopAirCondition(this.roomNumber);
+          await axios.post(`/api/room/${this.roomNumber}/ac/stop`);
+          ElMessage.success('空调已关闭');
         }
       } catch (error) {
         console.error("操作失败", error.message);
         this.airConditionOn = !value;
+        ElMessage.error('操作失败');
       }
     }
   }
 };
 </script>
+
+
 
 <style scoped>
 .hotel-ac-control {
