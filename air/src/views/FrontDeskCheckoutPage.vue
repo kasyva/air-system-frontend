@@ -41,7 +41,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
-import { ElMessage, ElCard } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import RoomCard from '@/components/RoomCard.vue';
 import CheckoutDetail from '@/components/CheckoutDetail.vue';
 import axios from 'axios';
@@ -56,15 +56,15 @@ export default {
   name: 'FrontDeskCheckout',
   components: {
     RoomCard,
-    ElCard,
     CheckoutDetail
   },
 
   setup() {
-    const allRooms = ref([]); // 存储所有房间数据（来自 remaining-room 接口）
+    const allRooms = ref([]); // 存储所有房间数据
     const dialogVisible = ref(false);
     const selectedRoom = ref(null);
     const roomsPerRow = 5; // 每行显示房间数
+    const isProcessing = ref(false); // 新增：处理状态标志
 
     // 计算属性：筛选出 occupied 为 true 的房间
     const filteredOccupiedRooms = computed(() => {
@@ -80,11 +80,11 @@ export default {
       return chunks;
     });
 
-    // 获取所有房间数据（调用 remaining-room 接口）
+    // 获取所有房间数据
     const fetchAllRooms = async () => {
       try {
-        const response = await service.get('/api/remaining-room'); // 接口路径需与后端一致
-        allRooms.value = response.data;
+        const response = await service.get('/api/remaining-room');
+        allRooms.value = response.data || []; // 确保数据为数组
         console.log('所有房间数据:', allRooms.value);
       } catch (error) {
         console.error('获取房间数据失败:', error);
@@ -96,22 +96,6 @@ export default {
     const showCheckoutDialog = (room) => {
       selectedRoom.value = { ...room }; // 深拷贝避免响应式污染
       dialogVisible.value = true;
-    };
-
-    // 处理退房确认（示例：调用退房 API）
-    const handleCheckoutConfirm = async (roomId) => {
-      dialogVisible.value = false;
-      try {
-        // 调用退房接口（需根据后端逻辑调整）
-        await service.post(`/api/rooms/${roomId}/checkout`);
-        ElMessage.success(`房间 ${roomId} 退房成功`);
-        // 刷新房间数据
-        await fetchAllRooms();
-        selectedRoom.value = null;
-      } catch (error) {
-        ElMessage.error('退房失败，请联系管理员');
-        console.error('退房请求失败:', error);
-      }
     };
 
     // 关闭弹窗
@@ -130,14 +114,12 @@ export default {
       dialogVisible,
       selectedRoom,
       showCheckoutDialog,
-      handleCheckoutConfirm,
-      handleDialogClose
+      handleDialogClose,
+      isProcessing // 用于模板中显示加载状态
     };
   }
 };
 </script>
-
-
 
 <style scoped>
 .checkout-page {
