@@ -15,29 +15,6 @@
           <el-form-item label="电话">
             <el-input v-model="form.phone" placeholder="请输入电话" style="width: 200px;"/>
           </el-form-item>
-
-          <el-form-item label="入住时间">
-            <el-col :span="10">
-              <el-date-picker v-model="form.checkinDate" type="date" placeholder="请选择入住日期"
-                              style="width: 160px;"/>
-            </el-col>
-            <el-col class="text-center" :span="1" style="margin: 0 0.5rem;">-</el-col>
-            <el-col :span="10">
-              <el-time-picker v-model="form.checkinTime" placeholder="请选择入住时间" style="width: 160px;"/>
-            </el-col>
-          </el-form-item>
-
-          <el-form-item label="退房时间">
-            <el-col :span="10">
-              <el-date-picker v-model="form.checkoutDate" type="date" placeholder="请选择退房日期"
-                              style="width: 160px;"/>
-            </el-col>
-            <el-col class="text-center" :span="1" style="margin: 0 0.5rem;">-</el-col>
-            <el-col :span="10">
-              <el-time-picker v-model="form.checkoutTime" placeholder="12:00:00" :disabled="true" style="width: 160px;"
-                              default-time="12:00:00"/>
-            </el-col>
-          </el-form-item>
         </el-form>
 
         <div style="margin-top: 50px; text-align: center;">
@@ -67,10 +44,6 @@ export default {
       customerName: '',
       idCard: '',
       phone: '',
-      checkinDate: '',
-      checkinTime: '',
-      checkoutDate: '',
-      checkoutTime: new Date().setHours(12, 0, 0, 0),  // 默认设置为当天12:00
       roomId: props.roomId
     })
 
@@ -78,31 +51,14 @@ export default {
       emit('close')
     }
 
-
-    const mergeDateTime = (datePart, timePart) => {
-      const date = new Date(datePart)
-      const time = new Date(timePart)
-
-      // 合并时间字段
-      date.setHours(time.getHours())
-      date.setMinutes(time.getMinutes())
-      date.setSeconds(time.getSeconds())
-      date.setMilliseconds(0)
-      return date
-    }
-
     const submitCheckin = async () => {
       try {
-        const checkinDateTime = mergeDateTime(form.value.checkinDate, form.value.checkinTime)
-        const checkoutDateTime = mergeDateTime(form.value.checkoutDate, form.value.checkoutTime)
-
         const checkinData = {
           roomId: props.roomId,
           customerName: form.value.customerName,
           idCard: form.value.idCard,
           phone: form.value.phone,
-          checkinDate: checkinDateTime.toISOString(),
-          checkoutDate: checkoutDateTime.toISOString()
+          checkinDate: ""
         }
         console.log('checkindata: ', checkinData)
 

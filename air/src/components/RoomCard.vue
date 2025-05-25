@@ -20,7 +20,6 @@
 
 <script>
 import {computed} from 'vue'
-import dayjs from 'dayjs'
 
 export default {
   name: 'RoomCard',
@@ -66,19 +65,10 @@ export default {
     })
 
     const displayText = computed(() => {
-      if (!props.occupied) {
+      if (!props.occupied)
         return `${props.price}¥`
-      } else {
-        const now = dayjs()
-        const checkout = dayjs(props.checkOutTime)
-        const diffHours = checkout.diff(now, 'hour')
-        const days = Math.floor(diffHours / 24)
-        const hours = diffHours % 24
-        if (diffHours <= 0) {
-          return '即将退房'
-        }
-        return `剩${days}天${hours}小时`
-      }
+      else
+        return ""
     })
 
     const handleClick = () => {

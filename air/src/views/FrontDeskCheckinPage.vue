@@ -25,9 +25,8 @@
                   :room-id="room.roomId"
                   :occupied="room.occupied"
                   :check-in-time="room.checkInTime"
-                  :check-out-time="room.checkOutTime"
                   :selected="room.roomId === selectedRoom"
-                  @click="selectRoom"
+                  @click="() => { if (!room.occupied) selectRoom(room.roomId) }"
               />
             </div>
           </div>
