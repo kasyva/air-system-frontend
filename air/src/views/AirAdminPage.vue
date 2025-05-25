@@ -46,7 +46,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import RoomCard_1 from '@/components/RoomCard_1.vue';
 import AirAdminDetail from '@/components/AirAdminDetail.vue';
-import { getRemainingRooms } from '@/mockData.js'; // 假设这是你获取房间数据的方法
 import BaseLayout from "@/components/Layout/BaseLayout.vue";
 import SidebarAirAdmin from '@/components/Layout/SidebarAirAdmin.vue';
 import { ElMessage } from 'element-plus';
@@ -60,7 +59,6 @@ const service = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   config => {
-    // 可以在此添加请求头，如token
     return config;
   },
   error => {
@@ -72,7 +70,7 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   response => {
-    return response.data;
+    return response; // 直接返回原始响应，便于处理不同结构
   },
   error => {
     console.error('响应错误:', error);
@@ -95,37 +93,53 @@ export default {
     const isStarting = ref(false);
     const isStopping = ref(false);
     const systemStatus = ref('');
-
-    // 新增：监控数据相关变量
-
     const roomMonitoringData = ref([]); // 存储监控数据
 
-    // 新增：获取监控数据的方法
+    // 获取监控数据的方法
     const fetchMonitoringData = async () => {
       try {
         const response = await service.get('/api/admin/monitoring');
-        roomMonitoringData.value = response; // 保存数据到响应式变量
-        console.log('【空调监控数据】', response); // 在控制台输出数据
+        roomMonitoringData.value = response.data || []; // 确保是数组
+        console.log('【空调监控数据】', roomMonitoringData.value);
       } catch (error) {
         console.error('获取监控数据失败:', error);
         ElMessage.error('监控数据获取失败');
       }
     };
 
-    // 新增方法用于关闭房间详情
+    // 关闭房间详情
     const closeDetail = () => {
       selectedRoom.value = null;
     };
 
-    const loadRoomData = async () => {
+    // 获取房间数据的方法（优化后）
+    const getRemainingRoomsData = async () => {
       try {
-        const response = await getRemainingRooms();
-        remainingRooms.value = response.data.map(room => ({
-          ...room,
-          isAirConditioningOn: false // 初始化空调状态
-        }));
+        const response = await service.get('/api/remaining-room');
+        // 处理接口可能返回的两种格式：{data: []} 或直接返回数组
+        const data = response.data || response;
+        if (Array.isArray(data)) {
+          remainingRooms.value = data;
+          console.log('【房间数据】', remainingRooms.value);
+        } else {
+          console.error('接口返回数据格式错误，需为数组');
+          ElMessage.error('房间数据格式错误');
+        }
       } catch (error) {
         console.error('获取房间数据失败:', error);
+        ElMessage.error('获取房间数据失败，请重试');
+      }
+    };
+
+    // 加载房间数据（含初始化状态）
+    const loadRoomData = async () => {
+      await getRemainingRoomsData();
+      // 确保数据存在且为数组后再处理
+      if (Array.isArray(remainingRooms.value)) {
+        remainingRooms.value = remainingRooms.value.map(room => ({
+          ...room,
+          isAirConditioningOn: room.acOn || false // 使用接口中的acOn状态（如果有）
+        }));
       }
     };
 
@@ -133,7 +147,7 @@ export default {
     const fetchSystemStatus = async () => {
       try {
         const response = await service.get('/api/admin/system/status');
-        systemStatus.value = response;
+        systemStatus.value = response.data || '状态未知';
       } catch (error) {
         console.error('获取系统状态失败:', error);
         systemStatus.value = '状态未知';
@@ -143,7 +157,6 @@ export default {
     // 开启中央空调系统
     const startSystem = async () => {
       if (isStarting.value) return;
-
       isStarting.value = true;
       try {
         await service.post('/api/admin/system/start');
@@ -160,7 +173,6 @@ export default {
     // 关闭中央空调系统
     const stopSystem = async () => {
       if (isStopping.value) return;
-
       isStopping.value = true;
       try {
         await service.post('/api/admin/system/stop');
@@ -177,40 +189,44 @@ export default {
     onMounted(() => {
       loadRoomData();
       fetchSystemStatus();
-      fetchMonitoringData(); // 初始加载时获取监控数据
+      fetchMonitoringData();
 
-      // 定时刷新系统状态和监控数据（示例：每5秒刷新系统状态，每10秒刷新监控数据）
+      // 定时刷新数据（示例）
       const systemStatusInterval = setInterval(fetchSystemStatus, 5000);
       const monitoringInterval = setInterval(fetchMonitoringData, 10000);
 
-      // 组件卸载时清除定时器
       return () => {
         clearInterval(systemStatusInterval);
         clearInterval(monitoringInterval);
       };
     });
 
+    // 计算属性（增强空值处理）
     const allRooms = computed(() => {
-      return remainingRooms.value;
+      return remainingRooms.value || [];
     });
 
     const chunkedAllRooms = computed(() => {
+      const rooms = allRooms.value || [];
       const chunks = [];
-      for (let i = 0; i < allRooms.value.length; i += roomsPerRow) {
-        chunks.push(allRooms.value.slice(i, i + roomsPerRow));
+      for (let i = 0; i < rooms.length; i += roomsPerRow) {
+        chunks.push(rooms.slice(i, i + roomsPerRow));
       }
       return chunks;
     });
 
+    // 显示房间详情
     const showDetailDialog = (room) => {
-      selectedRoom.value = { ...room }; // 深拷贝当前房间对象
+      selectedRoom.value = { ...room }; // 深拷贝避免响应式污染
     };
 
-    // 处理从弹窗中更新空调状态
+    // 处理空调状态更新
     const handleUpdateACStatus = ({ roomId, newValue }) => {
       const room = remainingRooms.value.find(r => r.roomId === roomId);
       if (room) {
         room.isAirConditioningOn = newValue;
+        // 这里可以添加发送更新到后端的逻辑（如果需要）
+        // service.patch(`/api/rooms/${roomId}/ac`, { acOn: newValue });
       }
     };
 
@@ -227,7 +243,7 @@ export default {
       handleUpdateACStatus,
       startSystem,
       stopSystem,
-      roomMonitoringData // 可选：如果需要在模板中展示监控数据
+      roomMonitoringData
     };
   }
 };
