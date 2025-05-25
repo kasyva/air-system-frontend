@@ -1,6 +1,5 @@
 <template>
-  <BaseLayout :sidebarComponent="sidebarComp"
-              :class="currentMode === 'cool' ? 'cool-theme' : 'warm-theme'">
+  <BaseLayout :sidebarComponent="sidebarComp" :class="currentMode === 'cool' ? 'cool-theme' : 'warm-theme'">
     <div class="hotel-ac-control">
       <h2> {{roomNumber}} 波普特廉价酒店欢迎您！</h2>
       <el-row :gutter="20">
@@ -25,6 +24,14 @@
             </template>
             <div class="text item">
               <el-switch v-model="airConditionOn" @change="toggleAirCondition"></el-switch>
+              <!-- 新增送风状态提示 -->
+              <div class="air-status" v-show="airConditionOn">
+                {{ serving ? '正在送风' : '请求送风中' }}
+              </div>
+              <!-- 新增更新时间显示 -->
+              <div class="update-time" v-show="lastUpdateTime">
+                上次更新: {{ lastUpdateTime }}
+              </div>
             </div>
           </el-card>
         </el-col>
@@ -171,6 +178,8 @@ export default {
       billingDetail: {}, // 详单信息
       loadingBilling: false, // 账单加载状态
       loadingDetail: false, // 详单加载状态
+      // 新增送风状态
+      serving: false,
       // 本地模拟数据
       localBillingData: {
         totalCost: 128.50,
@@ -178,7 +187,11 @@ export default {
         checkOutTime: '未退房',
         stayCost: 100.00,
         acCost: 28.50
-      }
+      },
+      // 定时任务相关
+      refreshTimer: null,
+      lastUpdateTime: null,
+      isPeriodicRefresh: false
     };
   },
   async mounted() {
@@ -191,6 +204,13 @@ export default {
       this.refreshDetail(),
       this.refreshBilling()
     ]);
+
+    // 启动定时刷新
+    this.startPeriodicRefresh();
+  },
+  // ✅ 使用 Vue 3 生命周期钩子
+  beforeUnmount() {
+    this.stopPeriodicRefresh();
   },
   methods: {
     mapWindSpeed(speed) {
@@ -211,8 +231,10 @@ export default {
 
         this.currentTemperature = status.currentTemp || 27;
         this.targetTemperature = status.targetTemp || 23.5;
-        this.airConditionOn = status.isAcOn || false;
+        this.airConditionOn = status.acOn || false;
         this.fanSpeed = this.mapWindSpeed(status.fanSpeed) || 'low';
+        // 新增字段获取
+        this.serving = status.serving || false;
 
         console.log("房间状态已加载:", status);
         ElMessage.success('房间信息加载成功');
@@ -235,7 +257,9 @@ export default {
         console.log("详单信息已加载:", this.billingDetail);
       } catch (error) {
         console.error("获取详单失败:", error);
-        ElMessage.error('获取详单失败');
+        if (!this.isPeriodicRefresh) {
+          ElMessage.error('获取详单失败');
+        }
       } finally {
         this.loadingDetail = false;
       }
@@ -252,13 +276,14 @@ export default {
         if (response.status === 200) {
           this.billingInfo = response.data;
           console.log("账单信息已加载:", this.billingInfo);
-          ElMessage.success('账单信息加载成功');
         } else {
           throw new Error(`获取账单失败: ${response.status}`);
         }
       } catch (error) {
         console.error("获取账单失败:", error);
-        ElMessage.warning('账单信息加载失败，使用本地模拟数据');
+        if (!this.isPeriodicRefresh) {
+          ElMessage.warning('账单信息加载失败，使用本地模拟数据');
+        }
         // 使用本地模拟数据
         this.billingInfo = this.localBillingData;
       } finally {
@@ -280,7 +305,7 @@ export default {
         });
 
         this.fanSpeed = speed;
-        ElMessage.success(`风速已设置为${speed === 'low' ? '低风' : speed === 'medium' ? '中风' : '高风'}`);
+        ElMessage.success(`风速已设置为${speed === 'LOW' ? '低风' : speed === 'MEDIUM' ? '中风' : '高风'}`);
       } catch (error) {
         console.error("设置风速失败:", error);
         ElMessage.error('设置风速失败');
@@ -341,12 +366,57 @@ export default {
         this.airConditionOn = !value;
         ElMessage.error('操作失败');
       }
+    },
+
+    // 定时刷新相关方法
+    startPeriodicRefresh() {
+      // 先停止已有的定时器
+      this.stopPeriodicRefresh();
+
+      // 设置新的定时器，每5秒执行一次
+      this.refreshTimer = setInterval(async () => {
+        this.isPeriodicRefresh = true;
+        try {
+          // 并行刷新详单和获取serving状态
+          await Promise.all([
+            this.refreshDetail(),
+            this.updateServingStatus()
+          ]);
+
+          // 更新最后刷新时间
+          this.lastUpdateTime = new Date().toLocaleTimeString();
+          console.log('数据已定时刷新');
+        } catch (error) {
+          console.error('定时刷新失败:', error);
+        } finally {
+          this.isPeriodicRefresh = false;
+        }
+      }, 5000);
+
+      console.log('已启动定时刷新，间隔5秒');
+    },
+
+    stopPeriodicRefresh() {
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer);
+        this.refreshTimer = null;
+        console.log('已停止定时刷新');
+      }
+    },
+
+    // 单独获取serving状态的方法
+    async updateServingStatus() {
+      try {
+        const response = await axios.get(`/api/room/${this.roomNumber}/status`);
+        const status = response.data;
+        this.serving = status.serving || false;
+      } catch (error) {
+        console.error("获取serving状态失败:", error);
+      }
     }
   }
 };
 </script>
-
-
 
 <style scoped>
 .hotel-ac-control {
@@ -452,5 +522,19 @@ export default {
   background: #efb854;
 }
 
+/* 新增送风状态样式 */
+.air-status {
+  font-size: 14px;
+  color: #ffffff;
+  margin-top: 8px;
+  opacity: 0.8;
+}
 
+/* 新增更新时间样式 */
+.update-time {
+  font-size: 12px;
+  color: #f0f0f0;
+  margin-top: 5px;
+  opacity: 0.6;
+}
 </style>

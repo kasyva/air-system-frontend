@@ -1,22 +1,5 @@
 <template>
   <div class="checkout-detail">
-    <!-- 顾客入住信息 -->
-    <el-card class="customer-info-card" v-if="billingInfo.roomId">
-      <template #header>
-        <span class="card-header">顾客入住信息</span>
-      </template>
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <p><strong>房间号：</strong>{{ billingInfo.roomId }}</p>
-        </el-col>
-        <el-col :span="8">
-          <p><strong>入住时间：</strong>{{ billingInfo.checkInTime }}</p>
-        </el-col>
-        <el-col :span="8">
-          <p><strong>退房时间：</strong>{{ billingInfo.checkOutTime || '未退房' }}</p>
-        </el-col>
-      </el-row>
-    </el-card>
 
     <!-- 账单和详单 -->
     <el-row :gutter="20" style="margin-top: 20px;">
@@ -128,8 +111,6 @@ import { jsPDF } from "jspdf";
 // 本地模拟数据（可根据需求自定义）
 const mockBillingData = (roomId) => ({
   roomId,
-  checkInTime: "2025-05-25 14:00",
-  checkOutTime: "2025-05-25 16:30",
   stayCost: 150, // 住宿费（元）
   acCost: 25.5, // 空调费（元）
   totalCost: 175.5 // 总费用
@@ -241,9 +222,6 @@ watch(
         // 调用 checkout 接口
         await axios.post(`/api/room/${roomId}/checkout`);
 
-        // 获取最新的账单数据（可选：如需实时更新账单）
-        // const billingRes = await axios.get(`/api/room/${roomId}/billing`);
-        // billingInfo.value = { ...billingRes.data };
 
         emit('confirmCheckout', roomId);
         ElMessage.success('退房成功');
