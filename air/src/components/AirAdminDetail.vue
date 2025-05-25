@@ -27,7 +27,7 @@
     <!-- 目标温度 -->
     <el-row :gutter="20" align="middle" style="margin-bottom: 20px;">
       <el-col :span="6" class="label">
-        <i class="el-icon-thermometer"></i> 当前温度
+        <i class="el-icon-thermometer"></i> 目标温度
       </el-col>
       <el-col :span="18">
         <el-input v-model="targetTemperature" disabled>
@@ -38,16 +38,16 @@
 
     <el-divider></el-divider>
 
-    <!-- 风速选择（禁用） -->
+    <!-- 风速选择（单选框样式，禁用状态） -->
     <el-row :gutter="20" align="middle" style="margin-bottom: 20px;">
       <el-col :span="6" class="label">
         <i class="el-icon-wind-power"></i> 风速选择
       </el-col>
       <el-col :span="18">
         <el-radio-group v-model="selectedWindSpeed" disabled>
-          <el-radio label="低风" border><i class="el-icon-bottom"></i> 低风</el-radio>
-          <el-radio label="中风" border><i class="el-icon-minus"></i> 中风</el-radio>
-          <el-radio label="高风" border><i class="el-icon-top"></i> 高风</el-radio>
+          <el-radio label="LOW" border><i class="el-icon-bottom"></i> 低风</el-radio>
+          <el-radio label="MEDIUM" border><i class="el-icon-minus"></i> 中风</el-radio>
+          <el-radio label="HIGH" border><i class="el-icon-top"></i> 高风</el-radio>
         </el-radio-group>
       </el-col>
     </el-row>
@@ -60,7 +60,7 @@
     </el-row>
 
     <!-- 装饰小风扇图标 -->
-    <div class="fan-decoration">
+    <div class="fan-decoration" :class="{ rotating: isACOn }">
       <svg viewBox="0 0 48 48" width="48" height="48">
         <circle cx="24" cy="24" r="5" fill="#409EFF"/>
         <line x1="24" y1="5" x2="24" y2="12" stroke="#409EFF" stroke-width="2"/>
@@ -78,8 +78,6 @@
 
 <script>
 import { ref, watch } from 'vue';
-// 引入你定义好的 mock 接口函数
-import { getAirConditionStatus} from '@/mockData.js'; // 根据你的路径调整
 
 export default {
   name: 'AirAdminDetail',
@@ -87,54 +85,58 @@ export default {
     selectedRoom: {
       type: Object,
       required: true
+    },
+    monitoringData: {
+      type: Array,
+      default: () => []
     }
   },
   setup(props) {
     const localSelectedRoom = ref(JSON.parse(JSON.stringify(props.selectedRoom)));
     const currentTemperature = ref(null);
-    const targetTemperature = ref(22); // 初始值为22°C
-    const selectedWindSpeed = ref('低风'); // 初始值为低风
+    const targetTemperature = ref(null);
+    const selectedWindSpeed = ref('LOW'); // 初始值设为低风
     const isACOn = ref(false);
 
-    // 使用你定义的 getAirConditionStatus 获取空调状态
-    const loadAirConditionStatus = async () => {
-      try {
-        const response = await getAirConditionStatus(localSelectedRoom.value.roomId);
-        const status = response.data;
+    // 从监控数据中更新房间状态
+    const updateRoomStatus = () => {
+      if (!props.monitoringData || !localSelectedRoom.value.roomId) return;
 
-        currentTemperature.value = status.currentTemperature;
-        targetTemperature.value = status.targetTemperature;
-        selectedWindSpeed.value = status.windSpeed;
-        isACOn.value = status.isAirConditioningOn;
-      } catch (error) {
-        console.error('获取空调状态失败:', error);
-        // 设置默认值或提示用户重试
-        currentTemperature.value = 25;
-        targetTemperature.value = 22;
-        selectedWindSpeed.value = '低风';
-        isACOn.value = false;
+      const roomData = props.monitoringData.find(
+        room => room.roomId === localSelectedRoom.value.roomId
+      );
+
+      if (roomData) {
+        currentTemperature.value = roomData.currentTemp;
+        targetTemperature.value = roomData.targetTemp;
+        selectedWindSpeed.value = roomData.fanSpeed || 'LOW'; // 确保有默认值
+        isACOn.value = roomData.acOn;
       }
     };
 
-    // 监听 selectedRoom 的变化，当 roomId 变化时重新加载空调状态
+    // 监听房间变化
     watch(
       () => props.selectedRoom,
       (newVal) => {
         localSelectedRoom.value = JSON.parse(JSON.stringify(newVal));
-        loadAirConditionStatus();
+        updateRoomStatus();
       },
-      { immediate: true, deep: true }
+      { immediate: true }
     );
 
-    // 初次加载
-    loadAirConditionStatus();
+    // 监听监控数据变化
+    watch(
+      () => props.monitoringData,
+      updateRoomStatus,
+      { immediate: true }
+    );
 
     return {
       localSelectedRoom,
       currentTemperature,
       targetTemperature,
       selectedWindSpeed,
-      isACOn,
+      isACOn
     };
   }
 };
@@ -194,21 +196,36 @@ export default {
   margin-right: 10px;
 }
 
+.el-radio__label {
+  display: flex;
+  align-items: center;
+}
+
+.el-radio__label i {
+  margin-right: 4px;
+}
+
 .fan-decoration {
   position: absolute;
   bottom: 0px;
   right: 100px;
   opacity: 0.15;
-  transition: transform 0.5s ease-in-out;
-  z-index: 10; /* 确保图标不被其他元素遮盖 */
-}
-.fan-decoration svg {
-  width: 64px; /* 根据需要调整大小 */
-  height: 64px; /* 根据需要调整大小 */
+  z-index: 10;
 }
 
-.fan-decoration:hover {
-  transform: rotate(360deg);
+.fan-decoration svg {
+  width: 64px;
+  height: 64px;
+}
+
+/* 空调开启时风扇旋转 */
+.fan-decoration.rotating svg {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes fadeIn {

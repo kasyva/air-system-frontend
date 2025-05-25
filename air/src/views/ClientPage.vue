@@ -102,24 +102,24 @@
             </template>
             <div class="text item">
               <el-button
-                @click="setFanSpeed('low')"
-                :type="fanSpeed === 'low' ? (currentMode === 'cool' ? 'primary' : 'warning') : 'default'"
+                @click="setFanSpeed('LOW')"
+                :type="fanSpeed === 'LOW' ? (currentMode === 'cool' ? 'primary' : 'warning') : 'default'"
                 style="width: 20%; margin-right: 5%"
               >
                 低风
               </el-button>
 
               <el-button
-                @click="setFanSpeed('medium')"
-                :type="fanSpeed === 'medium' ? (currentMode === 'cool' ? 'primary' : 'warning') : 'default'"
+                @click="setFanSpeed('MEDIUM')"
+                :type="fanSpeed === 'MEDIUM' ? (currentMode === 'cool' ? 'primary' : 'warning') : 'default'"
                 style="width: 20%; margin-right: 5%"
               >
                 中风
               </el-button>
 
               <el-button
-                @click="setFanSpeed('high')"
-                :type="fanSpeed === 'high' ? (currentMode === 'cool' ? 'primary' : 'warning') : 'default'"
+                @click="setFanSpeed('HIGH')"
+                :type="fanSpeed === 'HIGH' ? (currentMode === 'cool' ? 'primary' : 'warning') : 'default'"
                 style="width: 20%"
               >
                 高风

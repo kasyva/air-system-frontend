@@ -17,7 +17,8 @@
             :occupied="room.occupied"
             :checkInTime="room.checkInTime"
             :checkOutTime="room.checkOutTime"
-            :is-air-conditioning-enabled="room.isAirConditioningOn"
+            :monitoring-data="roomMonitoringData"
+            :is-air-conditioning-enabled="room.acOn"
             @toggle-air-conditioning="handleUpdateACStatus"
             @click="showDetailDialog(room)"
           />
@@ -30,6 +31,7 @@
         <component
           :is="currentComponent"
           :selected-room="selectedRoom"
+          :monitoring-data="roomMonitoringData"
           @update:ac="handleUpdateACStatus"
           @close="closeDetail"
         />
@@ -95,6 +97,7 @@ export default {
     const systemStatus = ref('');
 
     // 新增：监控数据相关变量
+
     const roomMonitoringData = ref([]); // 存储监控数据
 
     // 新增：获取监控数据的方法

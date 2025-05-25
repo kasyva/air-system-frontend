@@ -16,9 +16,8 @@
       <div class="corner bottom-right">
         <el-switch
           :width="50"
-          v-model="isAirConditioningOn"
-          @change="toggleAirConditioning"
-          @click.stop
+          v-model="roomACStatus"
+          :disabled="true"
         />
       </div>
     </div>
@@ -26,65 +25,38 @@
 </template>
 
 <script>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 
 export default {
   name: 'RoomCard',
   props: {
-    roomId: {
-      type: [String, Number],
-      required: true
-    },
-    occupied: {
-      type: Boolean,
-      default: false
-    },
-    checkInTime: {
-      type: String,
-      default: ''
-    },
-    checkOutTime: {
-      type: String,
-      default: ''
-    },
-    price: {
-      type: Number,
-      default: 200
-    },
-    selected: {
-      type: Boolean,
-      default: false
-    },
-    isAirConditioningEnabled: {
-      type: Boolean,
-      default: false // 新增属性，表示空调是否开启
-    }
+    roomId: { type: [String, Number], required: true },
+    occupied: { type: Boolean, default: false },
+    checkInTime: { type: String, default: '' },
+    checkOutTime: { type: String, default: '' },
+    price: { type: Number, default: 200 },
+    selected: { type: Boolean, default: false },
+    monitoringData: { type: Array, default: () => [] } // 接收监控数据
   },
-  emits: ['click', 'toggleAirConditioning'],
+  emits: ['click'],
   setup(props, { emit }) {
     const backgroundImageUrl = computed(() => {
-      return props.occupied ? require('@/assets/occupied-room.jpg') : require('@/assets/available-room.jpg');
+      return props.occupied
+        ? require('@/assets/occupied-room.jpg')
+        : require('@/assets/available-room.jpg');
     });
 
     const statusText = computed(() => {
       return props.occupied ? '入住中' : '未入住';
     });
 
-    // 使用 ref 存储本地空调状态
-    const isAirConditioningOn = ref(props.isAirConditioningEnabled);
-
-    // 当父组件更新 isAirConditioningEnabled 时，同步到本地 ref
-    watch(
-      () => props.isAirConditioningEnabled,
-      (newVal) => {
-        isAirConditioningOn.value = newVal;
-      }
-    );
-
-    // 当用户点击开关时触发事件
-    const toggleAirConditioning = (newValue) => {
-      emit('toggleAirConditioning', { roomId: props.roomId, newValue });
-    };
+    // 从监控数据中获取当前房间的空调状态
+    const roomACStatus = computed(() => {
+      const roomData = props.monitoringData.find(
+        room => room.roomId === props.roomId
+      );
+      return roomData?.acOn ?? false; // 防止找不到房间时出错
+    });
 
     const handleClick = () => {
       emit('click', props.roomId);
@@ -93,13 +65,14 @@ export default {
     return {
       backgroundImageUrl,
       statusText,
-      isAirConditioningOn,
-      toggleAirConditioning,
+      roomACStatus,
       handleClick
     };
   }
 };
 </script>
+
+
 
 <style scoped>
 .room-card {
