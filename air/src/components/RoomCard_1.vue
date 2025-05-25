@@ -55,7 +55,7 @@ export default {
       const acOn = roomData?.acOn ?? false;
 
       if (acOn) {
-        return props.serving ? '正在送风' : '请求送风';
+        return roomData.serving ? '正在送风' : '请求送风';
       } else {
         return '暂未使用';
       }
