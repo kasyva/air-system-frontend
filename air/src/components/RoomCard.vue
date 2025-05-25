@@ -2,7 +2,6 @@
   <el-card
       class="room-card"
       shadow="always"
-
       :class="{ selected: selected }"
       @click="handleClick"
   >

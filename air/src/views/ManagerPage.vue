@@ -55,6 +55,9 @@ import ECharts from 'vue-echarts'
 import {getLineChartMockData, getPieChartMockData} from '@/mockDataManager.js'
 import BaseLayout from "@/components/Layout/BaseLayout.vue";
 import SidebarManager from "@/components/Layout/SidebarManager.vue";
+import axios from 'axios'
+import dayjs from 'dayjs' // 用于计算日期范围
+
 
 export default {
   components: {
@@ -62,6 +65,7 @@ export default {
     ECharts
   },
   setup() {
+
     const chartType = ref('line') // 默认折线图
 
     const rooms = [...Array(10).keys()].map(i => (101 + i).toString())
@@ -78,12 +82,119 @@ export default {
     const pieChartOption = ref({})
 
     const fetchLineChartData = async () => {
-      lineChartOption.value = await getLineChartMockData(lineTime.value, lineRoom.value)
+      const today = dayjs()
+      let start, end
+
+      if (lineTime.value === 'day') {
+        start = end = today
+      } else if (lineTime.value === 'week') {
+        start = today.subtract(6, 'day')
+        end = today
+      }
+
+      const params = {
+        start: start.format('YYYY-MM-DD'),
+        end: end.format('YYYY-MM-DD')
+      }
+
+      if (lineRoom.value !== 'all') {
+        params.roomId = parseInt(lineRoom.value)
+      }
+
+      try {
+        console.log(params)
+        const res = await axios.get('/api/manager/report', {params})
+        console.log(res.data)
+        const data = res.data
+
+        lineChartOption.value = {
+          title: {text: '费用趋势图'},
+          tooltip: {trigger: 'axis'},
+          legend: {data: ['住宿费用', '空调费用']},
+          xAxis: {type: 'category', data: Object.keys(data.stayCostTrend)},
+          yAxis: {type: 'value'},
+          series: [
+            {
+              name: '住宿费用',
+              type: 'line',
+              data: Object.values(data.stayCostTrend)
+            },
+            {
+              name: '空调费用',
+              type: 'line',
+              data: Object.values(data.acCostTrend)
+            }
+          ]
+        }
+      } catch (e) {
+        console.error('获取折线图数据失败', e)
+        lineChartOption.value = await getLineChartMockData(lineTime.value, lineRoom.value)
+      }
     }
 
     const fetchPieChartData = async () => {
-      pieChartOption.value = await getPieChartMockData(pieMetric.value, pieRoom.value)
+      const today = dayjs()
+      const params = {
+        start: today.format('YYYY-MM-DD'),
+        end: today.format('YYYY-MM-DD')
+      }
+
+      if (pieRoom.value !== 'all') {
+        params.roomId = parseInt(pieRoom.value)
+      }
+
+      try {
+        console.log('请求参数：', params)
+        const res = await axios.get('/api/manager/report', {params})
+        console.log('后端返回：', res.data)
+        const data = res.data
+
+        if (pieMetric.value === 'fee') {
+          pieChartOption.value = {
+            title: {text: '费用占比', left: 'center'},
+            tooltip: {trigger: 'item'},
+            legend: {bottom: 0, left: 'center'},
+            series: [
+              {
+                type: 'pie',
+                radius: '50%',
+                data: [
+                  {name: '住宿费', value: data.costRatio.StayCost},
+                  {name: '空调费', value: data.costRatio.ACCost}
+                ]
+              }
+            ]
+          }
+        } else if (pieMetric.value === 'fan') {
+          pieChartOption.value = {
+            title: {text: '风速时长占比', left: 'center'},
+            tooltip: {trigger: 'item'},
+            legend: {bottom: 0, left: 'center'},
+            series: [
+              {
+                type: 'pie',
+                radius: '50%',
+                data: Object.entries(data.fanSpeedRatio).map(([key, value]) => {
+                  const labelMap = {
+                    HIGH: '高风',
+                    MEDIUM: '中风',
+                    LOW: '低风'
+                  }
+                  return {
+                    name: labelMap[key] || key,
+                    value: value
+                  }
+                })
+              }
+            ]
+          }
+        }
+      } catch (e) {
+        console.error('获取饼图数据失败', e)
+        pieChartOption.value = await getPieChartMockData(pieMetric.value, pieRoom.value)
+      }
     }
+
 
     const handleChartTypeChange = () => {
       if (chartType.value === 'line') {

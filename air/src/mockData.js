@@ -1,5 +1,5 @@
 // mockData.js
-import axios from 'axios';
+// import axios from 'axios';
 import dayjs from 'dayjs'; // 用来生成入住、退房时间
 
 // 生成时间
@@ -289,18 +289,16 @@ function calculateTotalCost(details) {
 }
 
 // 添加到 axios 的 post 请求处理中
-axios.post = (url, data) => {
-  if (url.endsWith('/api/rooms/checkin')) {
-    return checkin(data);
-  } else if (url.endsWith('/api/rooms/checkout')) {
-    return checkout(data); // ✅ 直接传递整个 data 对象
-  } else if(url.startsWith('/api/air-condition')) {
-    const roomId = url.split('/').pop(); // 提取 roomId
-    return getAirConditionStatus(roomId);
-  } else {
-    return Promise.reject(new Error('Unknown POST endpoint'));
-  }
-};
+// axios.post = (url, data) => {
+//   if (url.endsWith('/api/rooms/checkin')) {
+//     return checkin(data);
+//   } else if (url.endsWith('/api/rooms/checkout')) {
+//     return checkout(data); // ✅ 直接传递整个 data 对象
+//   } else if(url.startsWith('/api/air-condition')) {
+//     const roomId = url.split('/').pop(); // 提取 roomId
+//     return getAirConditionStatus(roomId);
+//   }
+// };
 
 // 新增：用于模拟开启空调的接口
 const startAirCondition = (roomId) => {

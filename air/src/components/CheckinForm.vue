@@ -50,7 +50,8 @@
 
 <script>
 import {ref} from 'vue'
-import {checkin} from '@/mockData.js' // 你后端接口（或者换成真实API）
+import axios from 'axios'
+// import {checkin} from '@/mockData.js'
 
 export default {
   name: 'CheckinForm',
@@ -69,7 +70,7 @@ export default {
       checkinDate: '',
       checkinTime: '',
       checkoutDate: '',
-      checkoutTime: '',
+      checkoutTime: new Date().setHours(12, 0, 0, 0),  // 默认设置为当天12:00
       roomId: props.roomId
     })
 
@@ -78,18 +79,37 @@ export default {
     }
 
 
+    const mergeDateTime = (datePart, timePart) => {
+      const date = new Date(datePart)
+      const time = new Date(timePart)
+
+      // 合并时间字段
+      date.setHours(time.getHours())
+      date.setMinutes(time.getMinutes())
+      date.setSeconds(time.getSeconds())
+      date.setMilliseconds(0)
+      return date
+    }
+
     const submitCheckin = async () => {
       try {
-        const checkoutDate = new Date(form.value.checkinDate)
-        checkoutDate.setDate(checkoutDate.getDate() + 1)
+        const checkinDateTime = mergeDateTime(form.value.checkinDate, form.value.checkinTime)
+        const checkoutDateTime = mergeDateTime(form.value.checkoutDate, form.value.checkoutTime)
 
         const checkinData = {
-          ...form.value,
-          checkoutDate: checkoutDate.toISOString()
+          roomId: props.roomId,
+          customerName: form.value.customerName,
+          idCard: form.value.idCard,
+          phone: form.value.phone,
+          checkinDate: checkinDateTime.toISOString(),
+          checkoutDate: checkoutDateTime.toISOString()
         }
+        console.log('checkindata: ', checkinData)
 
-        await checkin(checkinData)
-        emit('success')
+        const res = await axios.post('/api/checkin', checkinData)
+        if (res.data === '入住成功')
+          emit('success', res.data)
+
       } catch (error) {
         console.error('入住失败', error)
         emit('fail')

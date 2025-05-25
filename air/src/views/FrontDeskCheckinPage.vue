@@ -58,7 +58,8 @@ import SidebarFrontDesk from "@/components/Layout/SidebarFrontDesk.vue";
 
 import FrontDeskCheckout from '@/views/FrontDeskCheckoutPage.vue'
 
-import {getRemainingRooms, checkin} from '@/mockData.js'
+import {getRemainingRooms} from '@/mockData.js'
+import axios from 'axios'
 
 export default {
   name: 'FrontDesk',
@@ -87,10 +88,13 @@ export default {
 
     const getRemainingRoomsData = async () => {
       try {
-        const response = await getRemainingRooms()
+        const response = await axios.get('/api/remaining-room')
         remainingRooms.value = response.data
+        // console.log(response.data)
       } catch (error) {
         console.error('获取房间信息失败', error)
+        const response = await getRemainingRooms()
+        remainingRooms.value = response.data
       }
     }
 
@@ -99,18 +103,6 @@ export default {
       showCheckinForm.value = true
     }
 
-    const confirmCheckin = async () => {
-      const checkinRequest = {
-        roomId: selectedRoom.value,
-        ...form.value
-      }
-      try {
-        await checkin(checkinRequest)
-        dialogVisible.value = true
-      } catch (error) {
-        console.error('入住失败', error)
-      }
-    }
 
     const handleCheckinSuccess = () => {
       ElMessage.success('入住成功！')
@@ -128,11 +120,11 @@ export default {
     }
 
     const sidebarProps = {
-  activeIndex: activeTab.value,
-  onSelect: (key) => {
-    activeTab.value = key
-  }
-}
+      activeIndex: activeTab.value,
+      onSelect: (key) => {
+        activeTab.value = key
+      }
+    }
 
 
     onMounted(() => {
@@ -149,7 +141,6 @@ export default {
       showCheckinForm,
       getRemainingRoomsData,
       selectRoom,
-      confirmCheckin,
       handleCheckinSuccess,
       handleCheckinFail,
       clearForm,
