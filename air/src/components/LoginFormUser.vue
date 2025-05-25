@@ -36,7 +36,7 @@ import axios from 'axios'
 export default {
   name: 'LoginForm',
   emits: ['login-success'],
-  setup(_, {emit}) {
+  setup() {
     const router = useRouter()
     const formRef = ref(null)
 
@@ -65,9 +65,32 @@ export default {
     }
 
     const submitForm = () => {
-      formRef.value.validate((valid) => {
+      formRef.value.validate(async (valid) => {
         if (valid) {
+          try {
+            const res = await axios.post('/api/login/room', {
+              roomNumber: parseInt(form.value.roomNumber),
+              cardPassword: form.value.cardPassword
+            })
 
+            ElMessage.success(res.data || '登录成功')
+
+            // 登录成功后跳转到 client 页面，并带上房间号
+            router.push({
+              path: '/client-page',
+              query: {
+                room: form.value.roomNumber
+              }
+            })
+
+          } catch (error) {
+            if (error.response && error.response.status === 401) {
+              ElMessage.error(error.response.data || '房间号或房卡密码错误')
+            } else {
+              ElMessage.error('登录失败，请稍后重试')
+              console.error(error)
+            }
+          }
         }
       })
     }

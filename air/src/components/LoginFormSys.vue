@@ -2,14 +2,14 @@
   <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
     <el-form-item label="登录角色" prop="role">
       <el-select v-model="form.role" placeholder="请选择登录角色">
-        <el-option label="前台" value="frontdesk" />
-        <el-option label="空调管理员" value="airadmin" />
-        <el-option label="酒店经理" value="manager" />
+        <el-option label="前台" value="frontdesk"/>
+        <el-option label="空调管理员" value="airadmin"/>
+        <el-option label="酒店经理" value="manager"/>
       </el-select>
     </el-form-item>
 
     <el-form-item label="系统密码" prop="password">
-      <el-input v-model="form.password" show-password placeholder="请输入密码" />
+      <el-input v-model="form.password" show-password placeholder="请输入密码"/>
     </el-form-item>
 
     <el-form-item label-width="0" class="full-width-item">
@@ -21,9 +21,10 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
+import {ref} from 'vue'
+import {ElMessage} from 'element-plus'
+import {useRouter} from 'vue-router'
+import axios from "axios";
 
 export default {
   name: 'LoginFormSys',
@@ -36,15 +37,21 @@ export default {
     })
 
     const rules = {
-      role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-      password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+      role: [{required: true, message: '请选择角色', trigger: 'change'}],
+      password: [{required: true, message: '请输入密码', trigger: 'blur'}]
     }
 
     const submit = () => {
-      formRef.value.validate((valid) => {
+      formRef.value.validate(async (valid) => {
         if (!valid) return
-        if (form.value.password === '123456') {
-          ElMessage.success('登录成功')
+        try {
+          const res = await axios.post('/api/login/system', {
+            role: form.value.role,
+            password: form.value.password
+          })
+
+          ElMessage.success(res.data || '登录成功')
+
           switch (form.value.role) {
             case 'frontdesk':
               router.push('/frontdesk-page')
@@ -56,9 +63,17 @@ export default {
               router.push('/manager-page')
               break
           }
-        } else {
-          ElMessage.error('密码错误')
+          console.log('成功调用后端接口')
+
+        } catch (error) {
+          if (error.response && error.response.status === 401) {
+            ElMessage.error(error.response.data || '密码错误')
+          } else {
+            ElMessage.error('登录失败，请稍后重试')
+            console.error(error)
+          }
         }
+
       })
     }
 
