@@ -9,11 +9,6 @@
             <template #header>
               <div class="clearfix">
                 <span>当前温度</span>
-                <el-tooltip content="上次更新: {{lastUpdateTime}}" placement="top">
-                  <el-icon style="float: right; cursor: pointer;" @click="refreshNow">
-                    <Refresh />
-                  </el-icon>
-                </el-tooltip>
               </div>
             </template>
             <div class="text item">
@@ -183,12 +178,7 @@ export default {
         checkOutTime: '未退房',
         stayCost: 100.00,
         acCost: 28.50
-      },
-      // 新增定时刷新相关变量
-      refreshInterval: null, // 定时器ID
-      refreshTime: 30, // 刷新间隔（秒）
-      lastUpdateTime: '', // 上次更新时间
-      showRefreshButton: true // 是否显示刷新按钮
+      }
     };
   },
   async mounted() {
@@ -201,13 +191,6 @@ export default {
       this.refreshDetail(),
       this.refreshBilling()
     ]);
-
-    // 启动定时刷新
-    this.startRefreshTimer();
-  },
-  beforeUnmount() {
-    // 组件卸载前清除定时器
-    this.clearRefreshTimer();
   },
   methods: {
     mapWindSpeed(speed) {
@@ -231,65 +214,14 @@ export default {
         this.airConditionOn = status.isAcOn || false;
         this.fanSpeed = this.mapWindSpeed(status.fanSpeed) || 'low';
 
-        // 更新上次更新时间
-        this.lastUpdateTime = new Date().toLocaleTimeString();
-
         console.log("房间状态已加载:", status);
-        if (!this.showRefreshButton) {
-          ElMessage.success('房间信息加载成功');
-        }
+        ElMessage.success('房间信息加载成功');
       } catch (error) {
         console.error("获取房间状态失败:", error);
         this.errorMsg = `获取房间信息失败: ${error.message}`;
         ElMessage.error(this.errorMsg);
       } finally {
         this.loading = false;
-        this.showRefreshButton = true; // 允许显示刷新按钮
-      }
-    },
-
-    // 手动刷新
-    async refreshNow() {
-      if (!this.showRefreshButton) return; // 防止重复点击
-
-      this.showRefreshButton = false; // 防止重复点击
-      try {
-        await this.loadRoomStatus();
-        ElMessage.success('手动刷新成功');
-      } catch (error) {
-        // 错误处理已在 loadRoomStatus 中完成
-      } finally {
-        // 1秒后允许再次刷新
-        setTimeout(() => {
-          this.showRefreshButton = true;
-        }, 1000);
-      }
-    },
-
-    // 启动定时刷新
-    startRefreshTimer() {
-      // 先清除可能存在的旧定时器
-      this.clearRefreshTimer();
-
-      // 设置新的定时器
-      this.refreshInterval = setInterval(async () => {
-        console.log("定时刷新数据...");
-        await Promise.all([
-          this.loadRoomStatus(),
-          this.refreshDetail(),
-          this.refreshBilling()
-        ]);
-      }, this.refreshTime * 100); // 转换为毫秒
-
-      console.log(`已启动定时刷新，间隔 ${this.refreshTime} 秒`);
-    },
-
-    // 清除定时器
-    clearRefreshTimer() {
-      if (this.refreshInterval) {
-        clearInterval(this.refreshInterval);
-        this.refreshInterval = null;
-        console.log("已清除定时刷新");
       }
     },
 
@@ -520,14 +452,5 @@ export default {
   background: #efb854;
 }
 
-/* 刷新按钮样式 */
-.el-icon-refresh {
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.el-icon-refresh:hover {
-  transform: rotate(180deg);
-}
 
 </style>
