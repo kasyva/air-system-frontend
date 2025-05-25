@@ -27,23 +27,24 @@
     <!-- 目标温度 -->
     <el-row :gutter="20" align="middle" style="margin-bottom: 20px;">
       <el-col :span="6" class="label">
-        <i class="el-icon-sunrise-1"></i> 目标温度
+        <i class="el-icon-thermometer"></i> 当前温度
       </el-col>
       <el-col :span="18">
-        <el-slider v-model="targetTemperature" :min="16" :max="30" show-input @change="updateTargetTemperature">
-        </el-slider>
+        <el-input v-model="targetTemperature" disabled>
+          <template #append>℃</template>
+        </el-input>
       </el-col>
     </el-row>
 
     <el-divider></el-divider>
 
-    <!-- 风速选择 -->
+    <!-- 风速选择（禁用） -->
     <el-row :gutter="20" align="middle" style="margin-bottom: 20px;">
       <el-col :span="6" class="label">
         <i class="el-icon-wind-power"></i> 风速选择
       </el-col>
       <el-col :span="18">
-        <el-radio-group v-model="selectedWindSpeed" @change="updateWindSpeed">
+        <el-radio-group v-model="selectedWindSpeed" disabled>
           <el-radio label="低风" border><i class="el-icon-bottom"></i> 低风</el-radio>
           <el-radio label="中风" border><i class="el-icon-minus"></i> 中风</el-radio>
           <el-radio label="高风" border><i class="el-icon-top"></i> 高风</el-radio>
@@ -78,7 +79,7 @@
 <script>
 import { ref, watch } from 'vue';
 // 引入你定义好的 mock 接口函数
-import { getAirConditionStatus, setTargetTemperature, setWindSpeed } from '@/mockData.js'; // 根据你的路径调整
+import { getAirConditionStatus} from '@/mockData.js'; // 根据你的路径调整
 
 export default {
   name: 'AirAdminDetail',
@@ -93,6 +94,7 @@ export default {
     const currentTemperature = ref(null);
     const targetTemperature = ref(22); // 初始值为22°C
     const selectedWindSpeed = ref('低风'); // 初始值为低风
+    const isACOn = ref(false);
 
     // 使用你定义的 getAirConditionStatus 获取空调状态
     const loadAirConditionStatus = async () => {
@@ -103,41 +105,16 @@ export default {
         currentTemperature.value = status.currentTemperature;
         targetTemperature.value = status.targetTemperature;
         selectedWindSpeed.value = status.windSpeed;
+        isACOn.value = status.isAirConditioningOn;
       } catch (error) {
         console.error('获取空调状态失败:', error);
         // 设置默认值或提示用户重试
         currentTemperature.value = 25;
         targetTemperature.value = 22;
         selectedWindSpeed.value = '低风';
+        isACOn.value = false;
       }
     };
-
-    // 更新目标温度
-    const updateTargetTemperature = async (newTemp) => {
-    //console.log(`Attempting to set target temperature to ${newTemp}`);
-      try {
-        await setTargetTemperature(localSelectedRoom.value.roomId, newTemp);
-        //console.log(`Successfully updated target temperature to ${newTemp}`);
-        targetTemperature.value = newTemp; // 更新本地状态
-      } catch (error) {
-        console.error('更新目标温度失败:', error);
-      }
-    };
-
-    // 更新风速
-    const updateWindSpeed = async (newSpeed) => {
-      try {
-        console.log('正在调用 setWindSpeed 接口...');
-        await setWindSpeed(localSelectedRoom.value.roomId, newSpeed);
-        console.log('✅ 接口调用成功，更新本地状态');
-        selectedWindSpeed.value = newSpeed; // 更新本地状态
-        console.log('📌 当前本地风速已更新为:', selectedWindSpeed.value);
-      } catch (error) {
-        console.error('❌ 更新风速失败:', error.message || error);
-      }
-    };
-
-
 
     // 监听 selectedRoom 的变化，当 roomId 变化时重新加载空调状态
     watch(
@@ -157,12 +134,12 @@ export default {
       currentTemperature,
       targetTemperature,
       selectedWindSpeed,
-      updateTargetTemperature,
-      updateWindSpeed
+      isACOn,
     };
   }
 };
 </script>
+
 <style scoped>
 .air-admin-detail-card {
   max-width: 620px;
@@ -238,8 +215,4 @@ export default {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.fan-icon {
-
-}
-
 </style>
