@@ -60,7 +60,7 @@
     </el-row>
 
     <!-- 装饰小风扇图标 -->
-    <div class="fan-decoration" :class="{ rotating: isACOn }">
+    <div class="fan-decoration" :class="{ rotating: isServingOn }">
       <svg viewBox="0 0 48 48" width="48" height="48">
         <circle cx="24" cy="24" r="5" fill="#409EFF"/>
         <line x1="24" y1="5" x2="24" y2="12" stroke="#409EFF" stroke-width="2"/>
@@ -97,6 +97,7 @@ export default {
     const targetTemperature = ref(null);
     const selectedWindSpeed = ref('LOW'); // 初始值设为低风
     const isACOn = ref(false);
+    const isServingOn = ref(false);
 
     // 从监控数据中更新房间状态
     const updateRoomStatus = () => {
@@ -111,6 +112,7 @@ export default {
         targetTemperature.value = roomData.targetTemp;
         selectedWindSpeed.value = roomData.fanSpeed || 'LOW'; // 确保有默认值
         isACOn.value = roomData.acOn;
+        isServingOn.value = roomData.serving;
       }
     };
 
@@ -136,7 +138,8 @@ export default {
       currentTemperature,
       targetTemperature,
       selectedWindSpeed,
-      isACOn
+      isACOn,
+      isServingOn
     };
   }
 };
