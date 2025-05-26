@@ -101,6 +101,9 @@ export default {
     // 关闭弹窗
     const handleDialogClose = () => {
       selectedRoom.value = null;
+      // 重新加载房间数据
+      dialogVisible.value = false;
+      fetchAllRooms();
     };
 
     onMounted(() => {
