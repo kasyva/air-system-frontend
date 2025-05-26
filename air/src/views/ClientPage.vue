@@ -1,6 +1,7 @@
 <template>
   <BaseLayout :sidebarComponent="sidebarComp" :class="currentMode === 'cool' ? 'cool-theme' : 'warm-theme'">
     <div class="hotel-ac-control">
+    <el-card shadow="always" class="main-card">
       <h2> {{roomNumber}} 波普特廉价酒店欢迎您！</h2>
       <el-row :gutter="20">
         <el-col :span="8">
@@ -135,6 +136,7 @@
           </el-card>
         </el-col>
       </el-row>
+    </el-card>
     </div>
   </BaseLayout>
 </template>
@@ -452,6 +454,18 @@ export default {
 
 .clearfix:after {
   clear: both;
+}
+
+.main-card {
+  border-radius: 5px;
+  background-color: #ffffff;
+  box-shadow: var(--el-box-shadow-light);
+  margin: 10px 15px 0 10px;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .mode-icon {
