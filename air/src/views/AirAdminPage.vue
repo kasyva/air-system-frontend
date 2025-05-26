@@ -1,13 +1,18 @@
 <template>
   <BaseLayout :sidebarComponent="sidebarComp">
     <div class="air-condition-manager">
-      <!-- 中央空调控制按钮 -->
-      <div class="central-air-controls" style="margin: 20px;">
-        <el-button type="primary" @click="startSystem" :loading="isStarting">开启空调系统</el-button>
-        <el-button type="info" @click="stopSystem" :loading="isStopping">关闭空调系统</el-button>
-        <el-tag v-if="systemStatus">{{ systemStatus }}</el-tag>
-      </div>
-
+    <el-card shadow="always" class="main-card">
+      <template #header>
+            <div class="card-header">
+              <span>空调管理员监控界面</span>
+            </div>
+          <!-- 中央空调控制按钮 -->
+          <div class="central-air-controls" style="margin: 20px;">
+            <el-button type="primary" @click="startSystem" :loading="isStarting">开启空调系统</el-button>
+            <el-button type="info" @click="stopSystem" :loading="isStopping">关闭空调系统</el-button>
+            <el-tag v-if="systemStatus">{{ systemStatus }}</el-tag>
+          </div>
+      </template>
       <div class="room-list">
         <div class="room-row" v-for="(row, rowIndex) in chunkedAllRooms" :key="rowIndex">
           <RoomCard_1
@@ -24,7 +29,7 @@
           />
         </div>
       </div>
-
+    </el-card>
       <!-- 房间详情界面 -->
     <div v-if="selectedRoom" class="room-detail-container">
       <div class="room-detail">
@@ -257,6 +262,17 @@ export default {
   align-items: center; /* 垂直居中 */
 }
 
+.main-card {
+  border-radius: 5px;
+  background-color: #ffffff;
+  box-shadow: var(--el-box-shadow-light);
+  margin: 10px 15px 0 10px;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .room-list {
   display: flex;
   flex-direction: column;

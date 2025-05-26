@@ -122,10 +122,17 @@ export default {
 </script>
 
 <style scoped>
-.checkout-page {
-  padding: 20px;
+.main-card {
+  border-radius: 5px;
+  background-color: #ffffff;
+  box-shadow: var(--el-box-shadow-light);
+  margin: 10px 15px 0 10px;
+  flex: 1;
+  height: 560px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
-
 .room-list {
   display: flex;
   flex-direction: column;
